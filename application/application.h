@@ -16,27 +16,22 @@ class Application
 private:
     static Application* instance;
 public:
-    cv::String app_id;
-    cv::Mat canvas;
-    int width;
-    int height;
-    bool is_active;
+    cv::String app_id{ "app" };
+    cv::Mat* canvas{ nullptr };
+    unsigned int width{ 0 };
+    unsigned int height{ 0 };
+    bool is_active{ false };
 
-    Application() {}
+    Application() = default;
 
     ~Application() {
+        delete canvas;
         delete instance;
     }
 
-    void init_application(const std::string &app_id_, int width_, int height_) {
-
-        app_id = app_id_;
-        width = width_;
-        height = height_;
-        is_active = true;
-
-        canvas = cv::Mat::zeros(height, width, CV_8UC3);
-
+    void init(unsigned int width_ = 0, unsigned int height_ = 0, const std::string &app_id_ = "app") {
+        app_id = app_id_, width = width_, height = height_, is_active = true;
+        canvas = new cv::Mat(height, width, CV_8UC4, cv::Scalar(0, 0, 0, 0));
         cv::namedWindow(app_id, cv::WINDOW_NORMAL);
         cv::resizeWindow(app_id, width, height);
     }
@@ -48,7 +43,7 @@ public:
         return instance;
     }
 
-    MSG_TYPE get_message() {
+    static MSG_TYPE get_message() {
         if (cv::waitKey(DELTA_TIME) == 'q') {
             return EXIT;
         } else {
@@ -62,8 +57,8 @@ public:
         }
     }
 
-    void update() {
-        cv::imshow(app_id, canvas);
+    void update() const {
+        cv::imshow(app_id, *canvas);
     }
     
 };
