@@ -1,10 +1,9 @@
 #pragma once
 
-#include <opencv2/opencv.hpp>
-#include <cstring>
+#include "base.h"
 
 #define app Application::get_instance()
-#define DELTA_TIME
+#define DELTA_TIME 10
 
 enum MSG_TYPE {
     EXIT,
@@ -15,12 +14,13 @@ class Application
 {
 private:
     static Application* instance;
+
 public:
     cv::String app_id{ "app" };
     cv::Mat* canvas{ nullptr };
-    unsigned int width{ 0 };
-    unsigned int height{ 0 };
-    bool is_active{ false };
+    int width{ 0 };
+    int height{ 0 };
+    bool active{ false };
 
     Application() = default;
 
@@ -29,9 +29,9 @@ public:
         delete instance;
     }
 
-    void init(unsigned int width_ = 0, unsigned int height_ = 0, const std::string &app_id_ = "app") {
-        app_id = app_id_, width = width_, height = height_, is_active = true;
-        canvas = new cv::Mat(height, width, CV_8UC4, cv::Scalar(0, 0, 0, 0));
+    void init(int width_ = 0, int height_ = 0, const std::string &app_id_ = "app") {
+        app_id = app_id_, width = width_, height = height_, active = true;
+        canvas = new cv::Mat(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
         cv::namedWindow(app_id, cv::WINDOW_NORMAL);
         cv::resizeWindow(app_id, width, height);
     }
@@ -53,12 +53,16 @@ public:
 
     void handle_message(MSG_TYPE message) {
         if (message == EXIT) {
-            is_active = false;
+            active = false;
         }
     }
 
     void update() const {
         cv::imshow(app_id, *canvas);
+    }
+
+    void exit() {
+        cv::destroyAllWindows();
     }
     
 };
