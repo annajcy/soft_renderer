@@ -39,11 +39,11 @@ public:
 
     void set_pixel(int x, int y, const Color& color) {
         auto& pixel = canvas->at<cv::Vec3b>(height - 1 - y, x);
-        float alpha_factor = color.a / 255.0f;
+        float alpha_factor = color.A() / 255.0f;
         cv::Vec3b blended_pixel(
-            pixel[0] * (1 - alpha_factor) + color.b * alpha_factor,
-            pixel[1] * (1 - alpha_factor) + color.g * alpha_factor,
-            pixel[2] * (1 - alpha_factor) + color.r * alpha_factor
+            pixel[0] * (1 - alpha_factor) + color.B() * alpha_factor,
+            pixel[1] * (1 - alpha_factor) + color.G() * alpha_factor,
+            pixel[2] * (1 - alpha_factor) + color.R() * alpha_factor
         );
         pixel = blended_pixel;
     }

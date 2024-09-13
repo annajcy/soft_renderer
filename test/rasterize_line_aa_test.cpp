@@ -21,15 +21,10 @@ int main()
 
 	    gpu->clear();
 
-	    for (auto &p : line) {
-			gpu->set_pixel(p.first.x(), p.first.y(), Color(p.second));
-			std::cout << p.first.x() << ' ' << p.first.y() << ' ' << p.second << std::endl;
+	    for (auto &[p, alpha] : line) {
+			gpu->set_pixel(p.x(), p.y(), Color(alpha));
+			std::cout << p.x() << ' ' << p.y() << ' ' << alpha << std::endl;
 		}
-
-	    for (auto &p : line) {
-		    gpu->set_pixel(p.first.x(), p.first.y(), Color(p.second));
-		    std::cout << p.first.x() << ' ' << p.first.y() << ' ' << p.second << std::endl;
-	    }
 
         app->update();
         auto message = app->get_message();

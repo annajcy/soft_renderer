@@ -26,11 +26,6 @@ int main()
 		    std::cout << p.x() << ' ' << p.y() << std::endl;
 	    }
 
-	    for (auto &p : line) {
-		    gpu->set_pixel(p.x(), p.y(), Color());
-		    std::cout << p.x() << ' ' << p.y() << ' ' << std::endl;
-	    }
-
         app->update();
         auto message = app->get_message();
         app->handle_message(message);

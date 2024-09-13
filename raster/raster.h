@@ -6,68 +6,78 @@
 
 class Raster {
 public:
-	// static void rasterize_line_bresenham_colored(
-	// 		std::vector<math::Pixel_color>& result,
-	// 		math::Pixel_color pixel_a,
-	// 		math::Pixel_color pixel_b) {
+	static void rasterize_line_bresenham_colored(
+		std::vector<math::Pixel_color>& result,
+		math::Pixel_color pixel_a,
+		math::Pixel_color pixel_b
+	) {
 
-	// 	auto &[a, color_a] = pixel_a;
-	// 	auto &[b, color_b] = pixel_b;
+		if (pixel_a.first.x() > pixel_b.first.x()) std::swap(pixel_a, pixel_b);
 
-	// 	bool down = false, surge = false;
-	// 	result.clear();
+		auto &[a, color_a] = pixel_a;
+		auto &[b, color_b] = pixel_b;
 
-	// 	if (a == b) {
-	// 		result.push_back(pixel_a, (color_a + color_b) / 2);
-	// 		return;
-	// 	}
+		bool down = false, surge = false;
+		result.clear();
 
-	// 	if (a.x() > b.x()) std::swap(a, b);
-	// 	auto delta_x = b.x() - a.x();
-	// 	auto delta_y = b.y() - a.y();
+		if (a == b) {
+			result.push_back({a, color_a + color_b});
+			return;
+		}
 
-	// 	if (delta_y < 0) {
-	// 		b.y() = -b.y(), a.y() = -a.y();
-	// 		delta_y = b.y() - a.y();
-	// 		down = true;
-	// 	}
+		auto delta_x = b.x() - a.x();
+		auto delta_y = b.y() - a.y();
 
-	// 	if (delta_y > delta_x) {
-	// 		std::swap(b.x(), b.y()), std::swap(a.x(), a.y());
-	// 		delta_x = b.x() - a.x();
-	// 		delta_y = b.y() - a.y();
-	// 		surge = true;
-	// 	}
+		if (delta_y < 0) {
+			b.y() = -b.y(), a.y() = -a.y();
+			delta_y = b.y() - a.y();
+			down = true;
+		}
 
-	// 	//float mid_y = -delta_y * (a.x() + 1) + delta_x * (a.y() + 0.5) + a.x() * b.y() - b.x() * a.y();
-	// 	// f(x) * 2 won't effect its relation between 0;
-	// 	int mid_y = 2 * -delta_y * (a.x() + 1) + delta_x * (2 * a.y() + 1) + 2 * a.x() * b.y() - 2 * b.x() * a.y();
+		if (delta_y > delta_x) {
+			std::swap(b.x(), b.y()), std::swap(a.x(), a.y());
+			delta_x = b.x() - a.x();
+			delta_y = b.y() - a.y();
+			surge = true;
+		}
 
-	// 	for (int x = a.x(), y = a.y(); x <= b.x(); x ++) {
-	// 		result.push_back({x, y});
-	// 		if (mid_y < 0) {
-	// 			y ++;
-	// 			mid_y += 2 * (delta_x - delta_y);
-	// 		} else {
-	// 			mid_y -= 2 * delta_y;
-	// 		}
-	// 	}
+		//float mid_y = -delta_y * (a.x() + 1) + delta_x * (a.y() + 0.5) + a.x() * b.y() - b.x() * a.y();
+		// f(x) * 2 won't effect its relation between 0;
+		int mid_y = 2 * -delta_y * (a.x() + 1) + delta_x * (2 * a.y() + 1) + 2 * a.x() * b.y() - 2 * b.x() * a.y();
 
-	// 	if (surge) {
-	// 		for (auto &p : result)
-	// 			std::swap(p.x(), p.y());
-	// 	}
+		for (int x = a.x(), y = a.y(); x <= b.x(); x ++) {
 
-	// 	if (down) {
-	// 		for (auto &p : result)
-	// 			p.y() = -p.y();
-	// 	}
-	// }
+			auto red = math::interpolate_1d<int, int>({a.x(), color_a.R()}, {b.x(), color_b.R()}, x);
+			auto green = math::interpolate_1d<int, int>({a.x(), color_a.G()}, {b.x(), color_b.G()}, x);
+			auto blue = math::interpolate_1d<int, int>({a.x(), color_a.B()}, {b.x(), color_b.B()}, x);
+			auto alpha = math::interpolate_1d<int, int>({a.x(), color_a.A()}, {b.x(), color_b.A()}, x);
+			
+			result.push_back({{x, y}, Color(red, green, blue, alpha)});
+			if (mid_y < 0) {
+				y ++;
+				mid_y += 2 * (delta_x - delta_y);
+			} else {
+				mid_y -= 2 * delta_y;
+			}
+		}
+
+		if (surge) {
+			for (auto &p : result)
+				std::swap(p.first.x(), p.first.y());
+		}
+
+		if (down) {
+			for (auto &p : result)
+				p.first.y() = -p.first.y();
+		}
+
+	}
 
 	static void rasterize_line_bresenham(
-			std::vector<math::Point2di>& result,
-			math::Point2di a,
-			math::Point2di b) {
+		std::vector<math::Point2di>& result,
+		math::Point2di a,
+		math::Point2di b
+	)  {
 
 		bool down = false, surge = false;
 		result.clear();
@@ -120,9 +130,10 @@ public:
 	}
 
 	static void rasterize_line_aa(
-			std::vector<math::Pixel_alpha>& result,
-			math::Point2di a,
-			math::Point2di b) {
+		std::vector<math::Pixel_alpha>& result,
+		math::Point2di a,
+		math::Point2di b
+	)  {
 
 		bool down = false, surge = false;
 		result.clear();
