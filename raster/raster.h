@@ -14,16 +14,16 @@ public:
 
 		if (pixel_a.first.x() > pixel_b.first.x()) std::swap(pixel_a, pixel_b);
 
+		if (pixel_a.first == pixel_b.first) {
+			result.push_back({pixel_a.first, pixel_a.second + pixel_b.second});
+			return;
+		}
+
 		auto &[a, color_a] = pixel_a;
 		auto &[b, color_b] = pixel_b;
 
 		bool down = false, surge = false;
 		result.clear();
-
-		if (a == b) {
-			result.push_back({a, color_a + color_b});
-			return;
-		}
 
 		auto delta_x = b.x() - a.x();
 		auto delta_y = b.y() - a.y();
@@ -47,12 +47,15 @@ public:
 
 		for (int x = a.x(), y = a.y(); x <= b.x(); x ++) {
 
-			auto red = math::interpolate_1d<int, int>({a.x(), color_a.R()}, {b.x(), color_b.R()}, x);
-			auto green = math::interpolate_1d<int, int>({a.x(), color_a.G()}, {b.x(), color_b.G()}, x);
-			auto blue = math::interpolate_1d<int, int>({a.x(), color_a.B()}, {b.x(), color_b.B()}, x);
-			auto alpha = math::interpolate_1d<int, int>({a.x(), color_a.A()}, {b.x(), color_b.A()}, x);
+			auto color = math::interpolate_1d<int, Color>({a.x(), color_a}, {b.x(), color_b}, x);
+			result.push_back({{x, y}, color});
+
+			// auto red = math::interpolate_1d<int, int>({a.x(), color_a.R()}, {b.x(), color_b.R()}, x);
+			// auto green = math::interpolate_1d<int, int>({a.x(), color_a.G()}, {b.x(), color_b.G()}, x);
+			// auto blue = math::interpolate_1d<int, int>({a.x(), color_a.B()}, {b.x(), color_b.B()}, x);
+			// auto alpha = math::interpolate_1d<int, int>({a.x(), color_a.A()}, {b.x(), color_b.A()}, x);
+			// result.push_back({{x, y}, Color(red, green, blue, alpha)});
 			
-			result.push_back({{x, y}, Color(red, green, blue, alpha)});
 			if (mid_y < 0) {
 				y ++;
 				mid_y += 2 * (delta_x - delta_y);
@@ -79,15 +82,16 @@ public:
 		math::Point2di b
 	)  {
 
-		bool down = false, surge = false;
-		result.clear();
+		if (a.x() > b.x()) std::swap(a, b);
 
 		if (a == b) {
 			result.push_back(a);
 			return;
 		}
 
-		if (a.x() > b.x()) std::swap(a, b);
+		bool down = false, surge = false;
+		result.clear();
+		
 		auto delta_x = b.x() - a.x();
 		auto delta_y = b.y() - a.y();
 
@@ -135,15 +139,16 @@ public:
 		math::Point2di b
 	)  {
 
-		bool down = false, surge = false;
-		result.clear();
+		if (a.x() > b.x()) std::swap(a, b);
 
 		if (a == b) {
 			result.push_back({a, 1.0f});
 			return;
 		}
 
-		if (a.x() > b.x()) std::swap(a, b);
+		bool down = false, surge = false;
+		result.clear();
+
 		auto delta_x = b.x() - a.x();
 		auto delta_y = b.y() - a.y();
 

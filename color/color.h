@@ -25,8 +25,8 @@ public:
 		float alpha1 = a1 / 255.0f;
 		uint8_t r = r1 * alpha1 + r0 * (1 - alpha1);
 		uint8_t g = g1 * alpha1 + g0 * (1 - alpha1);
-		uint8_t b = g1 * alpha1 + b0 * (1 - alpha1);
-		uint8_t a = a1 + a0 * (1 - a1);
+		uint8_t b = b1 * alpha1 + b0 * (1 - alpha1);
+		uint8_t a = a1 + a0 * (1 - alpha1);
 		return Color(r, g, b, a);
 	}
 
@@ -37,7 +37,7 @@ public:
 		float alpha1 = a1 / 255.0f;
 		r0 = r1 * alpha1 + r0 * (1 - alpha1);
 		g0 = g1 * alpha1 + g0 * (1 - alpha1);
-		b0 = g1 * alpha1 + b0 * (1 - alpha1);
+		b0 = b1 * alpha1 + b0 * (1 - alpha1);
 		a0 = a1 + a0 * (1 - alpha1);
 		return *this;
 	}
