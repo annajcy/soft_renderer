@@ -1,5 +1,5 @@
 /img.jpg
-/build
 /.vscode
 /.idea
 /cmake-build-debug-wsl
+/build

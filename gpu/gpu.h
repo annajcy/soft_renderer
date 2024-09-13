@@ -36,7 +36,7 @@ public:
         canvas->setTo(cv::Scalar(0, 0, 0));
     }
 
-    void draw_point(int x, int y, const Color& color) {
+    void set_pixel(int x, int y, const Color& color) {
         auto& pixel = canvas->at<cv::Vec3b>(height - 1 - y, x);
         float alpha_factor = color.a / 255.0f;
         cv::Vec3b blended_pixel(

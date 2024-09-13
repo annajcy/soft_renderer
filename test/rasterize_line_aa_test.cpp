@@ -14,21 +14,21 @@ int main()
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	std::vector<math::Point2di> line;
-	Raster::rasterize_line_bresenham(line, {100, 100}, {200, 300});
+	std::vector<math::Pixel_alpha> line;
+	Raster::rasterize_line_aa(line, {100, 100}, {200, 300});
 
     while (app->active) {
 
 	    gpu->clear();
 
 	    for (auto &p : line) {
-		    gpu->set_pixel(p.x(), p.y(), Color());
-		    std::cout << p.x() << ' ' << p.y() << std::endl;
-	    }
+			gpu->set_pixel(p.first.x(), p.first.y(), Color(p.second));
+			std::cout << p.first.x() << ' ' << p.first.y() << ' ' << p.second << std::endl;
+		}
 
 	    for (auto &p : line) {
-		    gpu->set_pixel(p.x(), p.y(), Color());
-		    std::cout << p.x() << ' ' << p.y() << ' ' << std::endl;
+		    gpu->set_pixel(p.first.x(), p.first.y(), Color(p.second));
+		    std::cout << p.first.x() << ' ' << p.first.y() << ' ' << p.second << std::endl;
 	    }
 
         app->update();
