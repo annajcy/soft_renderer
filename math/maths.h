@@ -2,4 +2,5 @@
 
 #include "vec.h"
 #include "mat.h"
-#include "basic_geo.h"
+#include "geo.h"
+#include "lerp.h"

@@ -3,6 +3,7 @@
 #include "raster.h"
 #include "maths.h"
 #include "base.h"
+#include "color.h"
 
 std::string app_id = "soft_renderer";
 int height = 400;
