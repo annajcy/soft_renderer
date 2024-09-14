@@ -37,15 +37,12 @@ public:
         canvas->setTo(cv::Scalar(0, 0, 0));
     }
 
+    //the color format of opencv is BGR
     void set_pixel(int x, int y, const Color& color) {
         auto& pixel = canvas->at<cv::Vec3b>(height - 1 - y, x);
-        float alpha_factor = color.A() / 255.0f;
-        cv::Vec3b blended_pixel(
-            pixel[0] * (1 - alpha_factor) + color.B() * alpha_factor,
-            pixel[1] * (1 - alpha_factor) + color.G() * alpha_factor,
-            pixel[2] * (1 - alpha_factor) + color.R() * alpha_factor
-        );
-        pixel = blended_pixel;
+        Color background_color(pixel[2], pixel[1], pixel[0]);
+        auto [r, g, b, _] = Color::alpha_blend(color, background_color);
+        pixel = cv::Vec3b(b, g, r);
     }
 
 };

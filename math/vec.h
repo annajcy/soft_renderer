@@ -4,7 +4,7 @@
 
 namespace math {
 
-	template<Arithmetic T, int S>
+	template<arithmetic T, int S>
 	class Vec {
 	private:
 		std::unique_ptr<T[]> data;
@@ -55,21 +55,21 @@ namespace math {
 			return true;
 		}
 
-		bool operator==(const Vec<T, S>& vec) const requires Floating_point<T> {
+		bool operator==(const Vec<T, S>& vec) const requires floating_point<T> {
 			for (int i = 0; i < S; i ++) 
 				if (!equal(this->data[i], vec[i])) return false;
 			return true;
 		}
 
-		T& x() { assert(S >= 1); return data[0]; }
-		T& y() { assert(S >= 2); return data[1]; }
-		T& z() { assert(S >= 3); return data[2]; }
-		T& w() { assert(S >= 4); return data[3]; }
+		T& x() requires greater_than<int, S, 1> { return data[0]; }
+		T& y() requires greater_than<int, S, 2> { return data[1]; }
+		T& z() requires greater_than<int, S, 3> { return data[2]; }
+		T& w() requires greater_than<int, S, 4> { return data[3]; }
 
-		const T& x() const { assert(S >= 1); return data[0]; }
-		const T& y() const { assert(S >= 2); return data[1]; }
-		const T& z() const { assert(S >= 3); return data[2]; }
-		const T& w() const { assert(S >= 4); return data[3]; }
+		T x() const requires greater_than<int, S, 1>  { return data[0]; }
+		T y() const requires greater_than<int, S, 2>  { return data[1]; }
+		T z() const requires greater_than<int, S, 3>  { return data[2]; }
+		T w() const requires greater_than<int, S, 4>  { return data[3]; }
 
 		int dims() const {
 			return S;
@@ -224,7 +224,6 @@ namespace math {
 		}
 	};
 	
-
 	using Vec2f = Vec<float, 2>;
 	using Vec2i = Vec<int, 2>;
 	using Vec3f = Vec<float, 3>;

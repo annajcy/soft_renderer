@@ -8,19 +8,28 @@
 #define FRACTION(v)			((v) - (int)(v))
 
 template<typename T>
-concept Floating_point = std::is_floating_point_v<T>;
+concept floating_point = std::is_floating_point_v<T>;
 
 template<typename T>
-concept Arithmetic = std::is_arithmetic_v<T>;
+concept arithmetic = std::is_arithmetic_v<T>;
+
+template< typename T, T N, T Min, T Max>
+concept in_range = (N <= Max && N >= Min);
+
+template< typename T, T N, T Min>
+concept greater_than = (N >= Min);
+
+template< typename T, T N, T Max>
+concept less_than = (N <= Max);
 
 constexpr double eps = 1e-8;
 
-template<Floating_point T>
+template<floating_point T>
 bool equal(const T& a, const T&b) {
     return (std::fabs(a - b) < eps);
 }
 
-template<Floating_point T>
+template<floating_point T>
 int sign(const T& x) {
     if (x < -eps) return -1;
     if (x > eps) return 1;

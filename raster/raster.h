@@ -15,7 +15,7 @@ public:
 		if (pixel_a.first.x() > pixel_b.first.x()) std::swap(pixel_a, pixel_b);
 
 		if (pixel_a.first == pixel_b.first) {
-			result.push_back({pixel_a.first, pixel_a.second + pixel_b.second});
+			result.push_back({pixel_a.first, Color::alpha_blend(pixel_a.second, pixel_b.second)});
 			return;
 		}
 
@@ -47,14 +47,11 @@ public:
 
 		for (int x = a.x(), y = a.y(); x <= b.x(); x ++) {
 
-			auto color = math::interpolate_1d<int, Color>({a.x(), color_a}, {b.x(), color_b}, x);
-			result.push_back({{x, y}, color});
-
-			// auto red = math::interpolate_1d<int, int>({a.x(), color_a.R()}, {b.x(), color_b.R()}, x);
-			// auto green = math::interpolate_1d<int, int>({a.x(), color_a.G()}, {b.x(), color_b.G()}, x);
-			// auto blue = math::interpolate_1d<int, int>({a.x(), color_a.B()}, {b.x(), color_b.B()}, x);
-			// auto alpha = math::interpolate_1d<int, int>({a.x(), color_a.A()}, {b.x(), color_b.A()}, x);
-			// result.push_back({{x, y}, Color(red, green, blue, alpha)});
+			auto red = math::interpolate_1d<int, int>({a.x(), color_a.R()}, {b.x(), color_b.R()}, x);
+			auto green = math::interpolate_1d<int, int>({a.x(), color_a.G()}, {b.x(), color_b.G()}, x);
+			auto blue = math::interpolate_1d<int, int>({a.x(), color_a.B()}, {b.x(), color_b.B()}, x);
+			auto alpha = math::interpolate_1d<int, int>({a.x(), color_a.A()}, {b.x(), color_b.A()}, x);
+			result.push_back({{x, y}, Color(red, green, blue, alpha)});
 			
 			if (mid_y < 0) {
 				y ++;
