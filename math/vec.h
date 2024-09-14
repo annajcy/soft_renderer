@@ -3,251 +3,233 @@
 #include "base.h"
 
 namespace math {
-	template<typename T, int S>
+
+	template<Arithmetic T, int S>
 	class Vec {
-		T* data{ nullptr };
+	private:
+		std::unique_ptr<T[]> data;
 
 	public:
-		Vec() {
-			data = new T[S];
-		}
+		Vec<T, S>() : data(std::make_unique<T[]>(S)) { }
 
-		explicit Vec(int v) {
-			data = new T[S];
+		explicit Vec<T, S>(int value) : data(std::make_unique<T[]>(S)) {
 			for (int i = 0; i < S; i ++)
-				data[i] = v;
+				data[i] = value;
 		}
 
-		Vec(const Vec& v) {
-			data = new T[S];
+		Vec<T, S>(const Vec<T, S>& vec) : data(std::make_unique<T[]>(S)) {
 			for (int i = 0; i < S; i ++)
-				data[i] = v[i];
+				data[i] = vec[i];
 		}
 
-		Vec(Vec&& v)  noexcept {
-			data = v.data;
-			v.data = nullptr;
-		}
-
-		template<int N>
-		explicit Vec(const Vec<T, N>& v) {
-			data = new T[S];
+		template<typename Q, int N>
+		explicit Vec<T, S>(const Vec<Q, N>& vec) : data(std::make_unique<T[]>(S)) {
 			for (int i = 0; i < std::min(N, S); i ++)
-				data[i] = v[i];
+				data[i] = vec[i];
 		}
 
-		Vec(const std::initializer_list<T>& list) {
-			data = new T[S];
-			if (!list.size()) return;
+		Vec<T, S>(Vec<T, S>&& vec) noexcept : data(std::move(vec.data)) { }
+
+		template<typename N>
+		Vec<T, S>(const std::initializer_list<N>& list) : data(std::make_unique<T[]>(S)) {
 			int cnt = 0;
 			for (auto i : list) {
 				data[cnt ++] = i;
 				if (cnt == S) return;
 			}
-
 		}
 
-		~Vec() {
-			delete[] data;
+		T operator[](int index) const {
+			if (index < 0 || index >= S) throw std::out_of_range("Index out of range");
+			return data[index];
 		}
 
-		T operator[](int i) const {
-			assert(i < S && i >= 0);
-			return data[i];
+		T& operator[](int index) {
+			if (index < 0 || index >= S) throw std::out_of_range("Index out of range");
+			return data[index];
 		}
 
-		T& operator[](int i) {
-			assert(i < S && i >= 0);
-			return data[i];
+		bool operator==(const Vec<T, S>& vec) const {
+			for (int i = 0; i < S; i ++) 
+				if (this->data[i] != vec[i]) return false;
+			return true;
 		}
+
+		bool operator==(const Vec<T, S>& vec) const requires Floating_point<T> {
+			for (int i = 0; i < S; i ++) 
+				if (!equal(this->data[i], vec[i])) return false;
+			return true;
+		}
+
+		T& x() { assert(S >= 1); return data[0]; }
+		T& y() { assert(S >= 2); return data[1]; }
+		T& z() { assert(S >= 3); return data[2]; }
+		T& w() { assert(S >= 4); return data[3]; }
+
+		const T& x() const { assert(S >= 1); return data[0]; }
+		const T& y() const { assert(S >= 2); return data[1]; }
+		const T& z() const { assert(S >= 3); return data[2]; }
+		const T& w() const { assert(S >= 4); return data[3]; }
 
 		int dims() const {
 			return S;
 		}
 
-		int x() const {
-			assert(S >= 1);
-			return data[0];
-		}
-
-		int& x() {
-			assert(S >= 1);
-			return data[0];
-		}
-
-		int y() const  {
-			assert(S >= 2);
-			return data[1];
-		}
-
-		int& y()  {
-			assert(S >= 2);
-			return data[1];
-		}
-
-		int z() const  {
-			assert(S >= 3);
-			return data[2];
-		}
-
-		int& z()  {
-			assert(S >= 3);
-			return data[2];
-		}
-
-		int w() const {
-			assert(S >= 4);
-			return data[3];
-		}
-
-		int& w() {
-			assert(S >= 4);
-			return data[3];
-		}
-
-		Vec& operator=(const Vec& v) {
-			if (this == &v) return *this;
+		Vec<T, S>& operator=(const Vec<T, S>& rhs) {
+			if (this == &rhs) return *this;
 			for (int i = 0; i < S; i ++)
-				data[i] = v[i];
+				this->data[i] = rhs[i];
 			return *this;
 		}
 
-		Vec& operator=(Vec&& v)  noexcept {
-			if (this == &v) return *this;
-			data = v.data;
-			v.data = nullptr;
+		template<typename Q, int N>
+		Vec<T, S>& operator=(const Vec<Q, N>& rhs) {
+			for (int i = 0; i < std::min(N, S); i ++)
+				this->data[i] = rhs[i];
 			return *this;
+		}
+
+		Vec<T, S>& operator=(Vec<T, S>&& rhs) noexcept {
+			if (this == &rhs) return *this;
+			this->data = std::move(rhs.data);
+			return *this;
+		}
+
+		Vec<T, S> operator-() const {
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = -this->data[i];
+			return result;
+		}
+
+		template<typename N>
+		Vec<T, S> operator+(const Vec<N, S>& rhs) const {
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = this->data[i] + rhs[i];
+			return result;
+		}
+
+		template<typename N>
+		Vec<T, S> operator-(const Vec<N, S>& rhs) const {
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = this->data[i] - rhs[i];
+			return result;
+		}
+
+		template<typename N>
+		Vec<T, S> operator*(const N& scalar) const {
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = this->data[i] * scalar;
+			return result;
+		}
+
+		template<typename N>
+		Vec<T, S> operator/(const N& rhs) const {
+			if (!rhs) throw std::runtime_error("Divided by zero");
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = this->data[i] * 1.0 / rhs;
+			return result;
+		}
+
+		template<typename N>
+		Vec<T, S>& operator+=(const Vec<N, S>& rhs) {
+			for (int i = 0; i < S; i ++)
+				this->data[i] += rhs;
+			return *this;
+		}
+
+		template<typename N>
+		Vec<T, S>& operator-=(const Vec<N, S>& rhs) {
+			for (int i = 0; i < S; i ++)
+				this->data[i] -= rhs;
+			return *this;
+		}
+
+		template<typename N>
+		Vec<T, S>& operator*=(const N& rhs) {
+			for (int i = 0; i < S; i ++)
+				this->data[i] *= rhs;
+			return *this;
+		}
+
+		template<class N>
+		Vec<T, S>& operator/=(const N& rhs) {
+			if (!rhs) throw std::runtime_error("Divided by zero");
+			for (int i = 0; i < S; i ++) {
+				this->data[i] *= 1.0 / rhs;
+			}
+			return *this;
+		}
+
+		friend std::ostream& operator<<(std::ostream& os, const Vec<T, S>& vec) {
+			for (int i = 0; i < S; i ++)
+				std::cout << vec.data[i] << ' ';
+			std::cout << std::endl;
+			return os;
+		}
+
+		template<typename N>
+		friend Vec<T, S> inv(const Vec<N, S>& vec) {
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++) {
+				if (!vec[i]) throw std::runtime_error("Divided by zero");
+				result[i] = 1.0 / vec[i];
+			}
+			return result;
+		}
+
+		template<typename Q>
+		friend Vec<T, S> dot(const Vec<T, S>& lhs, const Vec<Q, S>& rhs) {
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = lhs[i] * rhs[i];
+			return result;
+		}
+
+		template<typename N>
+		friend Vec<T, S> operator*(const N& lhs,const Vec<T, S>& rhs) {
+			Vec<T, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = lhs * rhs[i];
+			return result;
+		}
+
+		//C++ 20
+		template<typename Q, int N>
+		friend Vec<Q, N> cast(const Vec<T, S>& vec) {
+			Vec<Q, N> result;
+			for (int i = 0; i < std::min(N, S); i ++)
+				result[i] = vec[i];
+			return result;
+		}
+
+		template<typename Q>
+		friend Vec<Q, S> cast_type(const Vec<T, S>& vec) {
+			Vec<Q, S> result;
+			for (int i = 0; i < S; i ++)
+				result[i] = vec[i];
+			return result;
 		}
 
 		template<int N>
-		Vec& operator=(const Vec<T, N>& v) {
+		friend Vec<T, N> cast_dims(const Vec<T, S>& vec) {
+			Vec<T, N> result;
 			for (int i = 0; i < std::min(N, S); i ++)
-				data[i] = v[i];
-			return *this;
-		}
-
-		bool operator==(const Vec& v) {
-			for (int i = 0; i < S; i ++)
-				if (data[i] != v[i]) return false;
-			return true;
-		}
-
-		Vec operator-() {
-			auto res = Vec(*this);
-			for (int i = 0; i < S; i ++)
-				res[i] = -res[i];
-			return res;
-		}
-
-		Vec operator+(const Vec& v) {
-			auto res = Vec(*this);
-			for (int i = 0; i < S; i ++)
-				res[i] += v[i];
-			return res;
-		}
-
-		friend Vec operator+(const Vec& v, const Vec& u) {
-			auto res = Vec(v);
-			for (int i = 0; i < S; i ++)
-				res[i] += u[i];
-			return res;
-		}
-
-		Vec operator-(const Vec& v) {
-			auto res = Vec(*this);
-			for (int i = 0; i < S; i ++)
-				res[i] -= v[i];
-			return res;
-		}
-
-		friend Vec dot(const Vec& u, const Vec& v) {
-			auto res = Vec(v);
-			for (int i = 0; i < S; i ++)
-				res[i] *= u[i];
-			return res;
-		}
-
-		Vec operator*(const T v) {
-			auto res = Vec(*this);
-			for (int i = 0; i < S; i ++)
-				res[i] *= v;
-			return res;
-		}
-
-		friend Vec operator*(const T v, const Vec& vec) {
-			auto res = Vec(vec);
-			for (int i = 0; i < S; i ++)
-				res[i] *= v;
-			return res;
-		}
-
-		friend Vec inv_dot(const Vec& u, const Vec& v) {
-			auto res = Vec(u);
-			for (int i = 0; i < S; i ++) {
-				assert(v[i]);
-				double inv = 1.0 / v[i];
-				res[i] = u[i] * inv;
-			}
-			return res;
-		}
-
-		Vec operator/(const T v) {
-			assert(v);
-			double inv = 1.0 / v;
-			auto res = Vec(*this);
-			for (int i = 0; i < S; i ++) {
-				res[i] = data[i] * inv;
-			}
-			return res;
-		}
-
-		Vec& operator+=(const Vec& v) {
-			for (int i = 0; i < S; i ++)
-				data[i] += v[i];
-			return *this;
-		}
-
-		Vec& operator-=(const Vec& v) {
-			for (int i = 0; i < S; i ++)
-				data[i] -= v[i];
-			return *this;
-		}
-
-		Vec& dot(const Vec& v) {
-			for (int i = 0; i < S; i ++)
-				data[i] *= v[i];
-			return *this;
-		}
-
-		Vec& operator*=(const T v) {
-			for (int i = 0; i < S; i ++)
-				data[i] *= v;
-			return *this;
-		}
-
-		Vec& inv_dot(const Vec& v) {
-			for (int i = 0; i < S; i ++) {
-				assert(v[i]);
-				double inv = 1.0 / v[i];
-				data[i] *= inv;
-			}
-			return *this;
-		}
-
-		Vec& operator/=(const T v) {
-			assert(v);
-			double inv = 1.0 / v;
-			for (int i = 0; i < S; i ++) {
-				data[i] *= inv;
-			}
-			return *this;
+				result[i] = vec[i];
+			return result;
 		}
 	};
+	
 
 	using Vec2f = Vec<float, 2>;
 	using Vec2i = Vec<int, 2>;
 	using Vec3f = Vec<float, 3>;
 	using Vec3i = Vec<int, 3>;
 	using Vec4f = Vec<float, 4>;
-	using Vec4i = Vec<int, 4>;
+	using Vec4i = Vec<int, 4>;	
+
 }

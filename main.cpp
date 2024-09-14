@@ -12,6 +12,24 @@ int cnt = 0;
 
 int main()
 {
+
+	math::Vec<double, 3> vec1 = {1.00000001, 2.0, 3.0};
+    math::Vec<double, 3> vec2 = {1.00000002, 2.0, 3.0};
+    math::Vec<int, 3> vec3 = {1, 2, 3};
+    math::Vec<int, 3> vec4 = {1, 2, 3};
+
+    if (vec1 == vec2) {
+        std::cout << "vec1 and vec2 are equal." << std::endl;
+    } else {
+        std::cout << "vec1 and vec2 are not equal." << std::endl;
+    }
+
+    if (vec3 == vec4) {
+        std::cout << "vec3 and vec4 are equal." << std::endl;
+    } else {
+        std::cout << "vec3 and vec4 are not equal." << std::endl;
+    }
+
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
