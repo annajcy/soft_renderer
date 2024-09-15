@@ -194,11 +194,45 @@ public:
 			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
 				std::vector<math::Point2d> sampled_points;
 				math::sample_pixel(sampled_points, {x, y}, scale);
-				int cnt = 0;
+				int enclosed = 0;
 				for (auto &p : sampled_points) {
-					if (triangle.enclose(p)) cnt ++;
+					if (triangle.enclose(p)) enclosed ++;
 				}
-				result.push_back({{x, y}, (decimal)cnt / (scale * scale)});
+				auto factor = (decimal)enclosed / sampled_points.size();
+				result.push_back({{x, y}, factor});
+			}
+	}
+
+	static void rasterize_traingle_colored(
+		std::vector<std::pair<math::Pixel, Color>>& result,
+		const std::pair<math::Point2d, Color>& a,
+		const std::pair<math::Point2d, Color>& b,
+		const std::pair<math::Point2d, Color>& c,
+		int scale = 1
+	) {
+		auto &[point_a, color_a] = a;
+		auto &[point_b, color_b] = b;
+		auto &[point_c, color_c] = c;
+		math::Triangle2d triangle(point_a, point_b, point_c);
+		auto [left_buttom, right_top] = triangle.get_AABB();
+		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
+			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
+				
+				std::vector<math::Point2d> sampled_points;
+				math::sample_pixel(sampled_points, {x, y}, scale);
+				int enclosed = 0;
+				for (auto &p : sampled_points) {
+					if (triangle.enclose(p)) enclosed ++;
+				}
+
+				auto factor = (decimal)enclosed / (scale * scale);
+				auto barycentic = math::get_barycentic(point_a, point_b, point_c, {x, y});
+				auto red = math::calculate_weighed(color_a.R(), color_b.R(), color_c.R(), barycentic);
+				auto green = math::calculate_weighed(color_a.G(), color_b.G(), color_c.G(), barycentic);
+				auto blue = math::calculate_weighed(color_a.B(), color_b.B(), color_c.B(), barycentic);
+				auto alpha = math::calculate_weighed(color_a.A(), color_b.A(), color_c.A(), barycentic) / 255.0 * factor;
+
+				result.push_back({{x, y}, Color(red, green, blue, alpha)});
 			}
 	}
 };

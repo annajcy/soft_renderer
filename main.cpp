@@ -17,16 +17,15 @@ int main()
 
 	math::Point2d a{20.0, 20.0}, b{80.0, 80.0}, c{20.0, 160.0};
 
-	std::vector<std::pair<math::Pixel, decimal>> points;
-	Raster::rasterize_traingle(points, a, b, c);
-
+	std::vector<std::pair<math::Pixel, Color>> points;
+	Raster::rasterize_traingle_colored(points, {a, Color(255, 0, 0)}, {b, Color(0, 255, 0)}, {c, Color(0, 0, 255)}, 4);
 	
     while (app->active) {
 
 	    gpu->clear();
 
-		for (auto &[pixel, alpha] : points) {
-			gpu->set_pixel(pixel.x(), pixel.y(), Color(alpha));
+		for (auto &[pixel, color] : points) {
+			gpu->set_pixel(pixel.x(), pixel.y(), color);
 		}
 
         app->update();

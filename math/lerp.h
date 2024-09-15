@@ -12,13 +12,17 @@ namespace math {
 		return {alpha, beta};
 	}
 
-    template<typename T, typename S>
-	S interpolate(const std::pair<T, S>& a, const std::pair<T, S>& b, const T& p) {
-		auto [alpha, beta] = get_factor(a.first, b.first, p);
-		return a.second * alpha + b.second * beta;
+	template<typename T>
+	T calculate_weighed(const T& a, const T& b, const std::pair<decimal, decimal>& factor) {
+		auto &[alpha, beta] = factor;
+		return a * alpha + b * beta;
 	}
 
-	template<typename T>
+    template<typename T, typename S>
+	S interpolate(const std::pair<T, S>& a, const std::pair<T, S>& b, const T& p) {
+		return calculate_weighed(a.second, b.second, get_factor(a.first, b.first, p));
+	}
+
 	std::tuple<decimal, decimal, decimal> get_barycentic(const Point2d& a, const Point2d& b, const Point2d& c, const Point2d& p)  {
 		Triangle2d abc(a, b, c), pab(p, a, b), pbc(p, b, c), pca(p, c, a);
 		auto area_abc = abc.area();
@@ -28,10 +32,15 @@ namespace math {
 		return {alpha, beta, gamma};
 	}
 
-	template<typename T, typename S>
+	template<typename T>
+	T calculate_weighed(const T& a, const T& b, const T& c, const std::tuple<decimal, decimal, decimal>& barycentric) {
+		auto &[alpha, beta, gamma] = barycentric;
+		return a * alpha + b * beta + c * gamma;
+	}
+
+	template<typename S>
 	S interpolate_barycentric(const std::pair<Point2d, S>& a,const std::pair<Point2d, S>& b, const std::pair<Point2d, S>& c, const Point2d& p) {
-		auto [alpha, beta, gamma] = get_barycentic(a.first, b.first, c.first, p);
-		return a.second * alpha + b.second * beta + c.second * gamma;
+		return calculate_weighed(a.second, b.second, c.second, get_barycentic(a.first, b.first, c.first, p));
 	}
 
 }
