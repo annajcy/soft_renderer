@@ -15,17 +15,19 @@ int main()
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	std::vector<math::Pixel_color> line;
-	Raster::rasterize_line_bresenham_colored(line, {{100, 100}, Color(255, 0, 0, 255)}, {{300, 200}, Color(0, 255, 0, 255)});
+	math::Point2d a{20.0, 20.0}, b{80.0, 80.0}, c{20.0, 160.0};
 
+	std::vector<std::pair<math::Pixel, decimal>> points;
+	Raster::rasterize_traingle(points, a, b, c);
+
+	
     while (app->active) {
 
 	    gpu->clear();
 
-	    for (auto &[p, color] : line) {
-		    gpu->set_pixel(p.x(), p.y(), color);
-		    std::cout << p.x() << ' ' << p.y() << color << std::endl;
-	    }
+		for (auto &[pixel, alpha] : points) {
+			gpu->set_pixel(pixel.x(), pixel.y(), Color(alpha));
+		}
 
         app->update();
         auto message = app->get_message();

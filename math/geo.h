@@ -11,12 +11,39 @@ namespace math {
 	using Vector3d = Vec3f;
 	using Homo2d = Vec3f;
 	using Homo3d = Vec4f;
+ 
+	Point2d pixel_to_point2d(const Pixel& pixel) {
+		return Point2d({pixel.x() + 0.5f, pixel.y() + 0.5f});
+	}
 
-	using Pixel_color = std::pair<Pixel, Color>;
-	using Pixel_alpha = std::pair<Pixel, decimal>;
+	void sample_pixel(std::vector<Point2d>& result, const Pixel& pixel, int scale) {
+		result.clear();
+		decimal stride = 1.0 / scale;
+		decimal startup = stride / 2;
 
-	Point2d pixel_to_point2d(const Pixel& point) {
-		return Point2d({point.x() + 0.5f, point.y() + 0.5f});
+		decimal x = startup + pixel.x();
+		for (int i = 0; i < scale; i ++, x += stride) {
+			decimal y = startup + pixel.y();
+			for (int j = 0; j < scale; j ++, y += stride) {
+				result.push_back({x, y});
+			}
+		}
+			
+	}
+
+	Pixel point2d_to_pixel(const Point2d& point) {
+		auto left = std::floor(point.x()), right = std::floor(point.x() + 1);
+		auto buttom = std::floor(point.y()), top = std::floor(point.y() + 1);
+		auto to_left = point.x() - left;
+		auto to_right = right - point.x();
+		auto to_buttom = point.y() - buttom;
+		auto to_top = top - point.y();
+		int x, y;
+		if (to_left > to_right) x = right;
+		else x = left;
+		if (to_buttom > to_top) y = top;
+		else y = buttom;
+		return Pixel({x, y});
 	}
 
 	template<typename T>
@@ -49,10 +76,10 @@ namespace math {
 		}
 
 		std::pair<Pixel, Pixel> get_AABB() {
-			auto min_x = std::min({a.x(), b.x(), c.x()});
-			auto min_y = std::min({a.y(), b.y(), c.y()});
-			auto max_x = std::max({a.x(), b.x(), c.x()});
-			auto max_y = std::max({a.y(), b.y(), c.y()});
+			int min_x = std::min({a.x(), b.x(), c.x()});
+			int min_y = std::min({a.y(), b.y(), c.y()});
+			int max_x = std::max({a.x(), b.x(), c.x()});
+			int max_y = std::max({a.y(), b.y(), c.y()});
 			return {{min_x, min_y}, {max_x, max_y}};
 		}
 

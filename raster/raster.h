@@ -7,9 +7,9 @@
 class Raster {
 public:
 	static void rasterize_line_bresenham_colored(
-		std::vector<math::Pixel_color>& result,
-		math::Pixel_color pixel_a,
-		math::Pixel_color pixel_b
+		std::vector<std::pair<math::Pixel, Color>>& result,
+		std::pair<math::Pixel, Color> pixel_a,
+		std::pair<math::Pixel, Color> pixel_b
 	) {
 
 		if (pixel_a.first.x() > pixel_b.first.x()) std::swap(pixel_a, pixel_b);
@@ -131,7 +131,7 @@ public:
 	}
 
 	static void rasterize_line_aa(
-		std::vector<math::Pixel_alpha>& result,
+		std::vector<std::pair<math::Pixel, decimal>>& result,
 		math::Pixel a,
 		math::Pixel b
 	)  {
@@ -164,7 +164,6 @@ public:
 
 		for (int x = a.x(); x <= b.x(); x ++) {
 			decimal y = ((decimal)delta_y / delta_x) * (x - a.x()) + a.y();
-			std::cout << y << std::endl;
 			auto alpha0 = std::ceil(y) - y;
 			auto alpha1 = y - std::ceil(y - 1);
 			result.push_back({{x, (int)std::floor(y)}, alpha0});
@@ -180,5 +179,26 @@ public:
 			for (auto &p : result)
 				p.first.y() = -p.first.y();
 		}
+	}
+
+	static void rasterize_traingle(
+		std::vector<std::pair<math::Pixel, decimal>>& result,
+		const math::Point2d& a,
+		const math::Point2d& b,
+		const math::Point2d& c,
+		int scale = 1
+	) {
+		math::Triangle2d triangle(a, b, c);
+		auto [left_buttom, right_top] = triangle.get_AABB();
+		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
+			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
+				std::vector<math::Point2d> sampled_points;
+				math::sample_pixel(sampled_points, {x, y}, scale);
+				int cnt = 0;
+				for (auto &p : sampled_points) {
+					if (triangle.enclose(p)) cnt ++;
+				}
+				result.push_back({{x, y}, (decimal)cnt / (scale * scale)});
+			}
 	}
 };
