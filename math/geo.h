@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base.h"
-#include "color.h"
+#include "vec.h"
 
 namespace math {
 	using Pixel = Vec2i;
@@ -28,7 +28,6 @@ namespace math {
 				result.push_back({x, y});
 			}
 		}
-			
 	}
 
 	Pixel point2d_to_pixel(const Point2d& point) {

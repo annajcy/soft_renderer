@@ -2,6 +2,7 @@
 
 #include "base.h"
 #include "geo.h"
+#include "vec.h"
 
 namespace math {
 

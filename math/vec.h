@@ -3,7 +3,6 @@
 #include "base.h"
 
 namespace math {
-
 	template<arithmetic T, int S>
 	class Vec {
 	private:
