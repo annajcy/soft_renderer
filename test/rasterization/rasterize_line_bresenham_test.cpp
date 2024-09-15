@@ -14,7 +14,7 @@ int main()
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	std::vector<math::Point2di> line;
+	std::vector<math::Pixel> line;
 	Raster::rasterize_line_bresenham(line, {100, 100}, {200, 300});
 
     while (app->active) {

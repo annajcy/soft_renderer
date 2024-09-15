@@ -24,6 +24,8 @@ concept less_than = (N <= Max);
 
 constexpr double eps = 1e-8;
 
+using decimal = double;
+
 template<floating_point T>
 bool equal(const T& a, const T&b) {
     return (std::fabs(a - b) < eps);
@@ -36,5 +38,11 @@ int sign(const T& x) {
     return 0; 
 }
 
+template<floating_point T>
+int cmp(const T& x, const T& y) {
+    if (fabs(x - y) < eps) return 0;
+    if (x < y) return -1;
+    return 1;
+}
 
 

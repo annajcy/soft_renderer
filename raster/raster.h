@@ -41,16 +41,16 @@ public:
 			surge = true;
 		}
 
-		//float mid_y = -delta_y * (a.x() + 1) + delta_x * (a.y() + 0.5) + a.x() * b.y() - b.x() * a.y();
+		//decimal mid_y = -delta_y * (a.x() + 1) + delta_x * (a.y() + 0.5) + a.x() * b.y() - b.x() * a.y();
 		// f(x) * 2 won't effect its relation between 0;
 		int mid_y = 2 * -delta_y * (a.x() + 1) + delta_x * (2 * a.y() + 1) + 2 * a.x() * b.y() - 2 * b.x() * a.y();
 
 		for (int x = a.x(), y = a.y(); x <= b.x(); x ++) {
 
-			auto red = math::interpolate_1d<int, int>({a.x(), color_a.R()}, {b.x(), color_b.R()}, x);
-			auto green = math::interpolate_1d<int, int>({a.x(), color_a.G()}, {b.x(), color_b.G()}, x);
-			auto blue = math::interpolate_1d<int, int>({a.x(), color_a.B()}, {b.x(), color_b.B()}, x);
-			auto alpha = math::interpolate_1d<int, int>({a.x(), color_a.A()}, {b.x(), color_b.A()}, x);
+			auto red = math::interpolate<int, int>({a.x(), color_a.R()}, {b.x(), color_b.R()}, x);
+			auto green = math::interpolate<int, int>({a.x(), color_a.G()}, {b.x(), color_b.G()}, x);
+			auto blue = math::interpolate<int, int>({a.x(), color_a.B()}, {b.x(), color_b.B()}, x);
+			auto alpha = math::interpolate<int, int>({a.x(), color_a.A()}, {b.x(), color_b.A()}, x);
 			result.push_back({{x, y}, Color(red, green, blue, alpha)});
 			
 			if (mid_y < 0) {
@@ -74,9 +74,9 @@ public:
 	}
 
 	static void rasterize_line_bresenham(
-		std::vector<math::Point2di>& result,
-		math::Point2di a,
-		math::Point2di b
+		std::vector<math::Pixel>& result,
+		math::Pixel a,
+		math::Pixel b
 	)  {
 
 		if (a.x() > b.x()) std::swap(a, b);
@@ -105,7 +105,7 @@ public:
 			surge = true;
 		}
 
-		//float mid_y = -delta_y * (a.x() + 1) + delta_x * (a.y() + 0.5) + a.x() * b.y() - b.x() * a.y();
+		//decimal mid_y = -delta_y * (a.x() + 1) + delta_x * (a.y() + 0.5) + a.x() * b.y() - b.x() * a.y();
 		// f(x) * 2 won't effect its relation between 0;
 		int mid_y = 2 * -delta_y * (a.x() + 1) + delta_x * (2 * a.y() + 1) + 2 * a.x() * b.y() - 2 * b.x() * a.y();
 
@@ -132,8 +132,8 @@ public:
 
 	static void rasterize_line_aa(
 		std::vector<math::Pixel_alpha>& result,
-		math::Point2di a,
-		math::Point2di b
+		math::Pixel a,
+		math::Pixel b
 	)  {
 
 		if (a.x() > b.x()) std::swap(a, b);
@@ -163,7 +163,7 @@ public:
 		}
 
 		for (int x = a.x(); x <= b.x(); x ++) {
-			float y = ((float)delta_y / delta_x) * (x - a.x()) + a.y();
+			decimal y = ((decimal)delta_y / delta_x) * (x - a.x()) + a.y();
 			std::cout << y << std::endl;
 			auto alpha0 = std::ceil(y) - y;
 			auto alpha1 = y - std::ceil(y - 1);

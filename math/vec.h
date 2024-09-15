@@ -66,10 +66,10 @@ namespace math {
 		T& z() requires greater_than<int, S, 3> { return data[2]; }
 		T& w() requires greater_than<int, S, 4> { return data[3]; }
 
-		T x() const requires greater_than<int, S, 1>  { return data[0]; }
-		T y() const requires greater_than<int, S, 2>  { return data[1]; }
-		T z() const requires greater_than<int, S, 3>  { return data[2]; }
-		T w() const requires greater_than<int, S, 4>  { return data[3]; }
+		T x() const requires greater_than<int, S, 1> { return data[0]; }
+		T y() const requires greater_than<int, S, 2> { return data[1]; }
+		T z() const requires greater_than<int, S, 3> { return data[2]; }
+		T w() const requires greater_than<int, S, 4> { return data[3]; }
 
 		int dims() const {
 			return S;
@@ -165,6 +165,37 @@ namespace math {
 			return *this;
 		}
 
+		T dot(const Vec<T, S>& v) const {
+			T result = 0;
+			for (int i = 0; i < S; i ++)
+				result += this->data[i] * v[i];
+			return result;
+		}
+
+		decimal norm() const {
+			decimal result = 0;
+			for (int i = 0; i < S; i ++) 
+				result += this->data[i] * this->data[i];
+			return std::sqrt(result);
+		}
+
+		Vec<decimal, S> normalize() const {
+			decimal norm = this->norm();
+			Vec<decimal, S> result;
+			for (int i = 0; i < S; i ++) 
+				result[i] = this->data[i] / norm;
+			return result;
+		}
+
+		Vec<decimal, S> project_to(const Vec<T, S>& vec) const {
+			Vec<decimal, S> result;
+			auto vec_norm = vec.norm();
+			decimal factor = this->dot(vec) / vec_norm / vec_norm;
+			for (int i = 0; i < S; i ++) 
+				result[i] = vec[i] * factor;
+			return result;
+		}
+
 		friend std::ostream& operator<<(std::ostream& os, const Vec<T, S>& vec) {
 			for (int i = 0; i < S; i ++)
 				std::cout << vec.data[i] << ' ';
@@ -183,7 +214,7 @@ namespace math {
 		}
 
 		template<typename Q>
-		friend Vec<T, S> dot(const Vec<T, S>& lhs, const Vec<Q, S>& rhs) {
+		friend Vec<T, S> operator*(const Vec<T, S>& lhs, const Vec<Q, S>& rhs) {
 			Vec<T, S> result;
 			for (int i = 0; i < S; i ++)
 				result[i] = lhs[i] * rhs[i];
@@ -222,13 +253,14 @@ namespace math {
 				result[i] = vec[i];
 			return result;
 		}
+
 	};
 	
-	using Vec2f = Vec<float, 2>;
+	using Vec2f = Vec<decimal, 2>;
 	using Vec2i = Vec<int, 2>;
-	using Vec3f = Vec<float, 3>;
+	using Vec3f = Vec<decimal, 3>;
 	using Vec3i = Vec<int, 3>;
-	using Vec4f = Vec<float, 4>;
+	using Vec4f = Vec<decimal, 4>;
 	using Vec4i = Vec<int, 4>;	
 
 }
