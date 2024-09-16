@@ -15,7 +15,7 @@ int main()
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	math::Point2d a{20.0, 20.0}, b{160.0, 320.0}, c{320.0, 20.0};
+	math::Point2d a{0.0, 0.0}, b{400.0, 400.0}, c{800.0, 0.0};
 
 	std::vector<std::pair<math::Pixel, Color>> points;
 	Raster::triangle_textured(points, {a, {0.0, 0.0}}, {b, {0.5, 1.0}}, {c, {1.0, 0.0}}, Image("assets/img.jpg"));
