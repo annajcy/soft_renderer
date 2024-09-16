@@ -4,6 +4,7 @@
 #include "vec.h"
 
 namespace math {
+
 	using Pixel = Vec2i;
 	using Point2d = Vec2f;
 	using Point3d = Vec3f;
@@ -12,10 +13,6 @@ namespace math {
 	using Homo2d = Vec3f;
 	using Homo3d = Vec4f;
  
-	Point2d pixel_to_point2d(const Pixel& pixel) {
-		return Point2d({pixel.x() + 0.5f, pixel.y() + 0.5f});
-	}
-
 	void sample_pixel(std::vector<Point2d>& result, const Pixel& pixel, int scale) {
 		result.clear();
 		decimal stride = 1.0 / scale;
@@ -28,6 +25,10 @@ namespace math {
 				result.push_back({x, y});
 			}
 		}
+	}
+
+	Point2d pixel_to_point2d(const Pixel& pixel) {
+		return Point2d({pixel.x() + 0.5f, pixel.y() + 0.5f});
 	}
 
 	Pixel point2d_to_pixel(const Point2d& point) {
