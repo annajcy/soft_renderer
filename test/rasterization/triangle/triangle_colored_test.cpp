@@ -15,11 +15,11 @@ int main()
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	math::Point2d a{20.0, 20.0}, b{80.0, 80.0}, c{20.0, 160.0};
+	math::Point2d a{20.0, 20.0}, b{160.0, 320.0}, c{320.0, 20.0};
 
 	std::vector<std::pair<math::Pixel, Color>> points;
-	Raster::traingle_colored(points, {a, Color(255, 0, 0)}, {b, Color(0, 255, 0)}, {c, Color(0, 0, 255)}, 4);
-	
+	Raster::triangle_textured(points, {a, {0.0, 0.0}}, {b, {0.5, 1.0}}, {c, {1.0, 0.0}}, Image("assets/img.jpg"));
+
     while (app->active) {
 
 	    gpu->clear();

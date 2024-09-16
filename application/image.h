@@ -21,8 +21,6 @@ public:
 
         auto channels_count = image.channels();
 
-        std::cout << channels_count << std::endl;
-
         for (int y = 0; y < height; y ++)
             for (int x = 0; x < width; x ++) {
                 Color color;
@@ -58,6 +56,20 @@ public:
     }
 
     Color at(int x, int y) const {
+        if (x < 0 || x >= width) throw std::out_of_range("Out of bound of image");
+        if (y < 0 || y >= height) throw std::out_of_range("Out of bound of image");
+        return data[y * width + x];
+    }
+
+    Color& at(decimal u, decimal v) {
+        int x = std::round(u * (width - 1)), y = std::round(v * (height - 1));
+        if (x < 0 || x >= width) throw std::out_of_range("Out of bound of image");
+        if (y < 0 || y >= height) throw std::out_of_range("Out of bound of image");
+        return data[y * width + x];
+    }
+
+    Color at(decimal u, decimal v) const {
+        int x = std::round(u * (width - 1)), y = std::round(v * (height - 1));
         if (x < 0 || x >= width) throw std::out_of_range("Out of bound of image");
         if (y < 0 || y >= height) throw std::out_of_range("Out of bound of image");
         return data[y * width + x];

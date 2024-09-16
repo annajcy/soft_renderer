@@ -4,6 +4,7 @@
 #include "maths.h"
 #include "base.h"
 #include "color.h"
+#include "image.h"
 
 std::string app_id = "soft_renderer";
 int height = 400;
@@ -15,16 +16,16 @@ int main()
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	math::Point2d a{20.0, 20.0}, b{160.0, 320.0}, c{320.0, 20.0};
+	Image img("assets/img1.png");
 
-	std::vector<std::pair<math::Pixel, Color>> points;
-	Raster::triangle_textured(points, {a, {0.0, 0.0}}, {b, {0.5, 1.0}}, {c, {1.0, 0.0}}, Image("assets/img.jpg"));
-
+	std::vector<std::pair<math::Pixel, Color>> v;
+	Raster::image(v, img, {100, 100}, 200, 200);
+	
     while (app->active) {
 
 	    gpu->clear();
 
-		for (auto &[pixel, color] : points) {
+		for (auto &[pixel, color] : v) {
 			gpu->set_pixel(pixel.x(), pixel.y(), color);
 		}
 

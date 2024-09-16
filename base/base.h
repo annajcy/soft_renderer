@@ -45,4 +45,9 @@ int cmp(const T& x, const T& y) {
     return 1;
 }
 
+template <arithmetic T>
+void clamp(T& v, const T& min, const T& max) {
+    v = std::min(v, max), v = std::max(v, min);
+}
+
 

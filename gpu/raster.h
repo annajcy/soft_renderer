@@ -182,7 +182,7 @@ public:
 		}
 	}
 
-	static void traingle_alpha(
+	static void triangle_alpha(
 		std::vector<std::pair<math::Pixel, decimal>>& result,
 		const math::Point2d& a,
 		const math::Point2d& b,
@@ -205,7 +205,7 @@ public:
 			}
 	}
 
-	static void traingle_colored(
+	static void triangle_colored(
 		std::vector<std::pair<math::Pixel, Color>>& result,
 		const std::pair<math::Point2d, Color>& a,
 		const std::pair<math::Point2d, Color>& b,
@@ -239,12 +239,59 @@ public:
 			}
 	}
 
-	static void image(std::vector<std::pair<math::Pixel, Color>>& result, const Image& image, const math::Pixel& start_point = {0, 0}) {
+	static void triangle_textured(
+		std::vector<std::pair<math::Pixel, Color>>& result,
+		const std::pair<math::Point2d, math::UV>& a,
+		const std::pair<math::Point2d, math::UV>& b,
+		const std::pair<math::Point2d, math::UV>& c,
+		const Image& image,
+		int scale = 1
+	) {
+		result.clear();
+		auto &[point_a, uv_a] = a;
+		auto &[point_b, uv_b] = b;
+		auto &[point_c, uv_c] = c;
+		math::Triangle2d triangle(point_a, point_b, point_c);
+		auto [left_buttom, right_top] = triangle.get_AABB();
+		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
+			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
+				
+				std::vector<math::Point2d> sampled_points;
+				math::sample_pixel(sampled_points, {x, y}, scale);
+				int enclosed = 0;
+				for (auto &p : sampled_points) {
+					if (triangle.enclose(p)) enclosed ++;
+				}
+
+				auto factor = (decimal)enclosed / (scale * scale);
+				auto barycentic = math::get_barycentic(point_a, point_b, point_c, {x, y});
+				auto uv_x = math::calculate_weighed(uv_a.x(), uv_b.x(), uv_c.x(), barycentic);
+				auto uv_y = math::calculate_weighed(uv_a.y(), uv_b.y(), uv_c.y(), barycentic);
+
+				clamp(uv_x, 0.0, 1.0), clamp(uv_y, 0.0, 1.0);
+
+				result.push_back({{x, y}, image.at(uv_x, uv_y) * factor});
+			}
+	}
+
+	
+
+	static void image_fixed(std::vector<std::pair<math::Pixel, Color>>& result, const Image& image, const math::Pixel& start_point = {0, 0}) {
 		result.clear();
 		int start_x = start_point.x(), start_y = start_point.y();
 		for (int i = 0, y = start_y; i < image.height; i ++, y ++)
 			for (int j = 0, x = start_x; j < image.width; j ++, x ++) {
 				result.push_back({{x, y}, image.at(x, y)});
+			}
+	}
+
+	static void image(std::vector<std::pair<math::Pixel, Color>>& result, const Image& image, const math::Pixel& start_point = {0, 0}, int width = 100, int height = 100) {
+		result.clear();
+		int stride_x = image.width / width, stride_y = image.height / height;
+		int start_x = start_point.x(), start_y = start_point.y();
+		for (int v = start_y, y = 0; v < start_y + height; v ++, y += stride_y)
+			for (int u = start_x, x = 0; u < start_x + width; u ++, x += stride_x) {
+				result.push_back({{u, v}, image.at(x, y)});
 			}
 	}
 
