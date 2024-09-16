@@ -13,6 +13,9 @@ include_directories( gpu )
 include_directories( color )
 include_directories( raster )
 
+file(GLOB copy_resources "assets")
+file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
+
 add_subdirectory(application)
 add_subdirectory(gpu)
 add_subdirectory(raster)
