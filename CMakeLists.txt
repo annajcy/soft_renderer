@@ -10,23 +10,17 @@ include_directories( base )
 include_directories( math )
 include_directories( application )
 include_directories( gpu )
-include_directories( color )
-include_directories( raster )
 
 file(GLOB copy_resources "assets")
 file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
 
 add_subdirectory(application)
 add_subdirectory(gpu)
-add_subdirectory(raster)
-add_subdirectory(color)
 
 # soft_renderer
 add_executable(soft_renderer main.cpp)
 target_link_libraries( soft_renderer ${OpenCV_LIBS} )
 target_link_libraries( soft_renderer application_lib )
 target_link_libraries( soft_renderer gpu_lib )
-target_link_libraries( soft_renderer raster_lib )
-target_link_libraries( soft_renderer color_lib )
 
 
