@@ -3,6 +3,7 @@
 #include "raster.h"
 #include "maths.h"
 #include "base.h"
+#include "color.h"
 
 std::string app_id = "soft_renderer";
 int height = 400;
@@ -14,17 +15,18 @@ int main()
     app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	std::vector<math::Pixel> line;
-	Raster::rasterize_line_bresenham(line, {100, 100}, {200, 300});
+	math::Point2d a{20.0, 20.0}, b{80.0, 80.0}, c{20.0, 160.0};
 
+	std::vector<std::pair<math::Pixel, Color>> points;
+	Raster::traingle_colored(points, {a, Color(255, 0, 0)}, {b, Color(0, 255, 0)}, {c, Color(0, 0, 255)}, 4);
+	
     while (app->active) {
 
 	    gpu->clear();
 
-	    for (auto &p : line) {
-		    gpu->set_pixel(p.x(), p.y(), Color());
-		    std::cout << p.x() << ' ' << p.y() << std::endl;
-	    }
+		for (auto &[pixel, color] : points) {
+			gpu->set_pixel(pixel.x(), pixel.y(), color);
+		}
 
         app->update();
         auto message = app->get_message();

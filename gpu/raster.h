@@ -3,10 +3,11 @@
 #include "base.h"
 #include "maths.h"
 #include "color.h"
+#include "image.h"
 
 class Raster {
 public:
-	static void rasterize_line_bresenham_colored(
+	static void line_bresenham_colored(
 		std::vector<std::pair<math::Pixel, Color>>& result,
 		std::pair<math::Pixel, Color> pixel_a,
 		std::pair<math::Pixel, Color> pixel_b
@@ -73,7 +74,7 @@ public:
 
 	}
 
-	static void rasterize_line_bresenham(
+	static void line_bresenham(
 		std::vector<math::Pixel>& result,
 		math::Pixel a,
 		math::Pixel b
@@ -130,12 +131,12 @@ public:
 		}
 	}
 
-	static void rasterize_line_aa(
+	static void line_alpha(
 		std::vector<std::pair<math::Pixel, decimal>>& result,
 		math::Pixel a,
 		math::Pixel b
 	)  {
-
+		
 		if (a.x() > b.x()) std::swap(a, b);
 
 		if (a == b) {
@@ -181,13 +182,14 @@ public:
 		}
 	}
 
-	static void rasterize_traingle(
+	static void traingle_alpha(
 		std::vector<std::pair<math::Pixel, decimal>>& result,
 		const math::Point2d& a,
 		const math::Point2d& b,
 		const math::Point2d& c,
 		int scale = 1
 	) {
+		result.clear();
 		math::Triangle2d triangle(a, b, c);
 		auto [left_buttom, right_top] = triangle.get_AABB();
 		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
@@ -203,13 +205,14 @@ public:
 			}
 	}
 
-	static void rasterize_traingle_colored(
+	static void traingle_colored(
 		std::vector<std::pair<math::Pixel, Color>>& result,
 		const std::pair<math::Point2d, Color>& a,
 		const std::pair<math::Point2d, Color>& b,
 		const std::pair<math::Point2d, Color>& c,
 		int scale = 1
 	) {
+		result.clear();
 		auto &[point_a, color_a] = a;
 		auto &[point_b, color_b] = b;
 		auto &[point_c, color_c] = c;
@@ -235,4 +238,14 @@ public:
 				result.push_back({{x, y}, Color(red, green, blue, alpha)});
 			}
 	}
+
+	static void image(std::vector<std::pair<math::Pixel, Color>>& result, const Image& image, const math::Pixel& start_point = {0, 0}) {
+		result.clear();
+		int start_x = start_point.x(), start_y = start_point.y();
+		for (int i = 0, y = start_y; i < image.height; i ++, y ++)
+			for (int j = 0, x = start_x; j < image.width; j ++, x ++) {
+				result.push_back({{x, y}, image.at(x, y)});
+			}
+	}
+
 };
