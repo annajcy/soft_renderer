@@ -18,7 +18,7 @@ int main()
 
 	Image img("assets/img1.png");
 
-	std::vector<std::pair<math::Pixel, Color>> v;
+	std::vector<std::pair<math::Pixel, math::Color>> v;
 	Raster::image(v, img, {100, 100}, 200, 200);
 	
     while (app->active) {

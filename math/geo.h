@@ -13,8 +13,8 @@ namespace math {
 	using Homo2d = Vec3f;
 	using Homo3d = Vec4f;
 	using UV = math::Vec2f;
- 
-	void sample_pixel(std::vector<Point2d>& result, const Pixel& pixel, int scale) {
+
+	inline void sample_pixel(std::vector<Point2d>& result, const Pixel& pixel, int scale) {
 		result.clear();
 		decimal stride = 1.0 / scale;
 		decimal startup = stride / 2;
@@ -28,11 +28,11 @@ namespace math {
 		}
 	}
 
-	Point2d pixel_to_point2d(const Pixel& pixel) {
+	inline Point2d pixel_to_point2d(const Pixel& pixel) {
 		return Point2d({pixel.x() + 0.5f, pixel.y() + 0.5f});
 	}
 
-	Pixel point2d_to_pixel(const Point2d& point) {
+	inline Pixel point2d_to_pixel(const Point2d& point) {
 		auto left = std::floor(point.x()), right = std::floor(point.x() + 1);
 		auto buttom = std::floor(point.y()), top = std::floor(point.y() + 1);
 		auto to_left = point.x() - left;
@@ -48,12 +48,12 @@ namespace math {
 	}
 
 	template<typename T>
-	Point2d rotate(const Point2d& p, T angle) {
+	inline Point2d rotate(const Point2d& p, T angle) {
 		return Point2d(p.x() * cos(angle) + p.y() * sin(angle), -p.x() * sin(angle) + p.y() * cos(angle));
 	}
 
 	template<typename T>
-	T cross(const Vec<T, 2>& a, const Vec<T, 2>& b) {
+	inline T cross(const Vec<T, 2>& a, const Vec<T, 2>& b) {
 		return a.x() * b.y() - a.y() * b.x();
 	} 
 
