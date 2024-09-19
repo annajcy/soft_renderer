@@ -4,36 +4,37 @@
 #include "maths.h"
 #include "base.h"
 #include "color.h"
+#include "image.h"
 
 std::string app_id = "soft_renderer";
-int height = 400;
-int width = 800;
+int height = 800;
+int width = 1600;
 int cnt = 0;
 
 int main()
 {
-	app->init(width, height, app_id);
+    app->init(width, height, app_id);
 	gpu->init(app->canvas);
 
-	math::Point2d a{0.0, 0.0}, b{400.0, 400.0}, c{800.0, 0.0};
+	Image img("assets/img1.png");
 
-	std::vector<std::pair<math::Pixel, math::Color>> points;
-	Raster::triangle_textured(points, {a, {0.0, 0.0}}, {b, {0.5, 1.0}}, {c, {1.0, 0.0}}, Image("assets/img.jpg"), 2);
+	std::vector<std::pair<math::Pixel, math::Color>> v;
+	Raster::image(v, img, {0, 0}, width, height, true, WRAP_MODE::REPEAT, FILL_MODE::FIT_WITDTH);
+	
+    while (app->active) {
 
-	while (app->active) {
+	    gpu->clear();
 
-		gpu->clear();
-
-		for (auto &[pixel, color] : points) {
+		for (auto &[pixel, color] : v) {
 			gpu->set_pixel(pixel.x(), pixel.y(), color);
 		}
 
-		app->update();
-		auto message = app->get_message();
-		app->handle_message(message);
-	}
+        app->update();
+        auto message = app->get_message();
+        app->handle_message(message);
+    }
 
 	app->exit();
 
-	return 0;
+    return 0;
 }
