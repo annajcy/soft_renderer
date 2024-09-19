@@ -245,7 +245,8 @@ public:
 		const std::pair<math::Point2d, math::UV>& c,
 		const Image& image,
 		int scale = 1,
-		bool bilinear = true
+		bool bilinear = true,
+		WRAP_MODE warp_mode = WRAP_MODE::REPEAT
 	) {
 		result.clear();
 		auto &[point_a, uv_a] = a;
@@ -270,7 +271,7 @@ public:
 
 				clamp(uv_x, 0.0, 1.0), clamp(uv_y, 0.0, 1.0);
 
-				result.push_back({{x, y}, image.at_uv(uv_x, uv_y, bilinear) * factor});
+				result.push_back({{x, y}, image.at_uv(uv_x, uv_y, bilinear, warp_mode) * factor});
 			}
 	}
 
@@ -283,13 +284,37 @@ public:
 			}
 	}
 
-	static void image(std::vector<std::pair<math::Pixel, math::Color>>& result, const Image& image, const math::Pixel& start_point = {0, 0}, int width = 100, int height = 100) {
+	static void image(
+		std::vector<std::pair<math::Pixel, math::Color>>& result, 
+		const Image& image, 
+		const math::Pixel& start_point = {0, 0}, 
+		int width = 100, int height = 100, 
+		bool bilinear = true, 
+		WRAP_MODE warp_mode = WRAP_MODE::REPEAT,
+		FILL_MODE fill_mode = FILL_MODE::FIT_HEIGHT
+	) {
 		result.clear();
 		int stride_x = image.width / width, stride_y = image.height / height;
 		int start_x = start_point.x(), start_y = start_point.y();
-		for (int v = start_y, y = 0; v < start_y + height; v ++, y += stride_y)
-			for (int u = start_x, x = 0; u < start_x + width; u ++, x += stride_x) {
-				result.push_back({{u, v}, image.at(x, y)});
+		for (int i = 0, y = start_y; i < height; i ++, y ++)
+			for (int j = 0, x = start_x; j < width; j ++, x ++) {
+
+				decimal u, v;
+				if (warp_mode == WRAP_MODE::NONE) {
+					u = (decimal)j / width, v = (decimal)i / height;
+				} else {
+					if (fill_mode == FILL_MODE::FIT_HEIGHT) {
+						u = (decimal)j / width * width / height / image.ratio(), v = (decimal)i / height; 
+					} else if (fill_mode == FILL_MODE::FIT_WITDTH) {
+						u = (decimal)j / width, v = (decimal)i / height * height / width * image.ratio(); 
+					} else {
+						u = (decimal)j / image.width, v = (decimal)i / image.height; 
+					}
+				}
+
+				//std::cout << u << ' ' << v << std::endl;
+				result.push_back({{x, y}, image.at_uv(u, v, bilinear, warp_mode)});
+
 			}
 	}
 

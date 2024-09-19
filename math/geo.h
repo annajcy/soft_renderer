@@ -12,7 +12,7 @@ namespace math {
 	using Vector3d = Vec3f;
 	using Homo2d = Vec3f;
 	using Homo3d = Vec4f;
-	using UV = math::Vec2f;
+	using UV = Vec2f;
 
 	inline void sample_pixel(std::vector<Point2d>& result, const Pixel& pixel, int scale) {
 		result.clear();

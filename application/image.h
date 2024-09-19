@@ -3,6 +3,18 @@
 #include "base.h"
 #include "color.h"
 
+enum WRAP_MODE {
+    NONE,
+    REPEAT,
+    MIRROR,
+};
+
+enum FILL_MODE {
+    FLATTEN,
+    FIT_WITDTH,
+    FIT_HEIGHT,
+};
+
 class Image {
 private:
     std::unique_ptr<math::Color[]> data;
@@ -50,6 +62,7 @@ public:
     Image(Image&& image) : width(image.width), height(image.height), data(std::move(image.data)) { }
 
 	int size() const { return width * height; }
+    decimal ratio() const { return (decimal)width / height; }
 
 	math::Color& at(int x, int y) {
         if (x < 0 || x >= width) throw std::out_of_range("Error: Out of bound of image");
@@ -63,15 +76,39 @@ public:
         return data[y * width + x];
     }
 
-	math::Color at_uv(decimal u, decimal v, bool bilinear = true) const {
-		if (bilinear) return at_uv_bilinear(u, v);
-		int x = std::round(u * (width - 1)), y = std::round(v * (height - 1));
-		if (x < 0 || x >= width) throw std::out_of_range("Error: Out of bound of image");
-		if (y < 0 || y >= height) throw std::out_of_range("Error: Out of bound of image");
+	math::Color at_uv(decimal u, decimal v, bool bilinear = true, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) const {
+		if (bilinear) return at_uv_bilinear(u, v, wrap_mode);
+
+        if (wrap_mode == WRAP_MODE::REPEAT) {
+            if (cmp(u, 0.0) == -1 || cmp(u, 1.0) == 1) u = fraction(u), u = fraction(1 + u);  
+            if (cmp(v, 0.0) == -1 || cmp(v, 1.0) == 1) v = fraction(v), v = fraction(1 + v);
+
+        } else if (wrap_mode == WRAP_MODE::MIRROR) {
+            if (cmp(u, 0.0) == -1 || cmp(u, 1.0) == 1) u = fraction(u), u = 1 - fraction(1 + u);  
+            if (cmp(v, 0.0) == -1 || cmp(v, 1.0) == 1) v = fraction(v), v = 1 - fraction(1 + v);  
+        } else {
+		    if (cmp(u, 0.0) == -1 || cmp(u, 1.0) == 1) throw std::out_of_range("Error: Out of bound of image");
+		    if (cmp(v, 0.0) == -1 || cmp(v, 1.0) == 1) throw std::out_of_range("Error: Out of bound of image");
+        }
+
+        int x = std::round(u * (width - 1)), y = std::round(v * (height - 1));
 		return data[y * width + x];
 	}
 
-	math::Color at_uv_bilinear(decimal u, decimal v) const {
+	math::Color at_uv_bilinear(decimal u, decimal v, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) const {
+
+        if (wrap_mode == WRAP_MODE::REPEAT) {
+            if (cmp(u, 0.0) == -1 || cmp(u, 1.0) == 1) u = fraction(u), u = fraction(1 + u);  
+            if (cmp(v, 0.0) == -1 || cmp(v, 1.0) == 1) v = fraction(v), v = fraction(1 + v);
+
+        } else if (wrap_mode == WRAP_MODE::MIRROR) {
+            if (cmp(u, 0.0) == -1 || cmp(u, 1.0) == 1) u = fraction(u), u = 1 - fraction(1 + u);  
+            if (cmp(v, 0.0) == -1 || cmp(v, 1.0) == 1) v = fraction(v), v = 1 - fraction(1 + v);  
+        } else {
+		    if (cmp(u, 0.0) == -1 || cmp(u, 1.0) == 1) throw std::out_of_range("Error: Out of bound of image");
+		    if (cmp(v, 0.0) == -1 || cmp(v, 1.0) == 1) throw std::out_of_range("Error: Out of bound of image");
+        }
+
 	    u *= (width - 1), v *= (height - 1);
 	    int x = std::floor(u), y = std::floor(v);
 
@@ -96,5 +133,7 @@ public:
 
 		return color;
     }
+
+    
 
 };
