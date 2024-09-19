@@ -5,8 +5,9 @@
 
 namespace math {
 
-	template<arithmetic T, int S>
+	template<Arithmetic T, int S>
 	class Vec {
+		static_assert(S > 0, "Vector dimensions must be positive");
 	private:
 		std::array<T, S> data{};
 
@@ -38,10 +39,10 @@ namespace math {
 
 		template<typename N>
 		Vec<T, S>(const std::initializer_list<N>& list) {
-			int cnt = 0;
+			int x = 0;
 			for (auto i : list) {
-				data[cnt++] = i;
-				if (cnt == S) return;
+				data[x] = i;
+				if (++ x == S) return;
 			}
 		}
 
@@ -64,15 +65,15 @@ namespace math {
 			return *this;
 		}
 
-		T& x() requires greater_than<int, S, 1> { return data[0]; }
-		T& y() requires greater_than<int, S, 2> { return data[1]; }
-		T& z() requires greater_than<int, S, 3> { return data[2]; }
-		T& w() requires greater_than<int, S, 4> { return data[3]; }
+		T& x() requires Greater_than<int, S, 1> { return data[0]; }
+		T& y() requires Greater_than<int, S, 2> { return data[1]; }
+		T& z() requires Greater_than<int, S, 3> { return data[2]; }
+		T& w() requires Greater_than<int, S, 4> { return data[3]; }
 
-		T x() const requires greater_than<int, S, 1> { return data[0]; }
-		T y() const requires greater_than<int, S, 2> { return data[1]; }
-		T z() const requires greater_than<int, S, 3> { return data[2]; }
-		T w() const requires greater_than<int, S, 4> { return data[3]; }
+		T x() const requires Greater_than<int, S, 1> { return data[0]; }
+		T y() const requires Greater_than<int, S, 2> { return data[1]; }
+		T z() const requires Greater_than<int, S, 3> { return data[2]; }
+		T w() const requires Greater_than<int, S, 4> { return data[3]; }
 
 		int dims() const { return S; }
 
@@ -90,7 +91,7 @@ namespace math {
 			return data == vec.data;
 		}
 
-		bool operator==(const Vec<T, S>& vec) const requires floating_point<T> {
+		bool operator==(const Vec<T, S>& vec) const requires Floating_point<T> {
 			for (int i = 0; i < S; i++)
 				if (!equal(this->data[i], vec[i])) return false;
 			return true;
