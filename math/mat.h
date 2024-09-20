@@ -227,12 +227,12 @@ namespace math {
             return mat;
         }
 
-        T determinant() const requires Equal<int, S, V> {
+        T det() const requires Equal<int, S, V> {
             if constexpr (S == 1) return this->at(0, 0);
             else {
                 T result = 0;
                 for (int i = 0; i < S; i ++)
-                    result += ((i & 1) ? -1 : 1) * this->at(i, 0) * this->minor(i, 0).determinant();
+                    result += ((i & 1) ? -1 : 1) * this->at(i, 0) * this->minor(i, 0).det();
                 return result;
             }
         }

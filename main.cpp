@@ -155,7 +155,7 @@ void test_matrix_determinant() {
     {
         math::Mat<int, 1, 1> mat_1x1;
         mat_1x1.at(0, 0) = 5;
-        assert(mat_1x1.determinant() == 5);
+        assert(mat_1x1.det() == 5);
         std::cout << "Test Case 1 (1x1 Matrix) passed.\n";
     }
 
@@ -166,7 +166,7 @@ void test_matrix_determinant() {
         mat_2x2.at(0, 1) = 2;
         mat_2x2.at(1, 0) = 3;
         mat_2x2.at(1, 1) = 4;
-        assert(mat_2x2.determinant() == -2);  // Expected determinant: -2
+        assert(mat_2x2.det() == -2);  // Expected determinant: -2
         std::cout << "Test Case 2 (2x2 Matrix) passed.\n";
     }
 
@@ -182,7 +182,7 @@ void test_matrix_determinant() {
         mat_3x3.at(2, 0) = 7;
         mat_3x3.at(2, 1) = 8;
         mat_3x3.at(2, 2) = 9;
-        assert(mat_3x3.determinant() == 0);  // Expected determinant: 0
+        assert(mat_3x3.det() == 0);  // Expected determinant: 0
         std::cout << "Test Case 3 (3x3 Matrix) passed.\n";
     }
 
@@ -205,7 +205,7 @@ void test_matrix_determinant() {
         mat_4x4.at(3, 1) = 0;
         mat_4x4.at(3, 2) = 5;
         mat_4x4.at(3, 3) = 0;
-        assert(mat_4x4.determinant() == 30);  // Expected determinant: 30
+        assert(mat_4x4.det() == 30);  // Expected determinant: 30
         std::cout << "Test Case 4 (4x4 Matrix) passed.\n";
     }
 
