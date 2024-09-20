@@ -1,3 +1,5 @@
+#pragma once
+
 #include "base.h"
 #include "vec.h"
 
@@ -94,13 +96,14 @@ namespace math {
             }
         }
 
-        template<typename N>
-        Mat<T, S, V>(const std::initializer_list<std::initializer_list<N>>& lists) {
+        Mat<T, S, V>(const std::initializer_list<std::initializer_list<varied_type>>& lists) {
             int i = 0, j = 0;
-            for (auto &vec : lists) {
+            for (const auto &vec : lists) {
                 j = 0;
-                for (auto &v : vec) {
-                    this->at(i, j) = v;
+                for (const auto &v : vec) {
+                    std::visit([&](auto&& arg) {
+                        this->at(i, j) = static_cast<T>(arg);
+                    }, v);
                     if (++ j == V) break;
                 }
                 if (++ i == S) return;
@@ -175,6 +178,15 @@ namespace math {
                     for (int k = 0; k < V; k ++)
                         mat.at(i, j) += this->at(i, k) * rhs.at(k, j);
             return mat;
+        }
+
+        template<typename N>
+        Vec<T, S> operator*(const Vec<N, V>& rhs) const {
+            Vec<T, S> vec;
+            for (int i = 0; i < S; i ++)
+                for (int k = 0; k < V; k ++)
+                    vec[i] += this->at(i, k) * rhs[k];
+            return vec;
         }
 
         template<typename N, int P, int Q>
@@ -280,4 +292,12 @@ namespace math {
         }
 
     };
+
+    using Mat2x2 = Mat<decimal, 2, 2>;
+    using Mat3x3 = Mat<decimal, 3, 3>;
+    using Mat4x4 = Mat<decimal, 4, 4>;
+
+    using Mat2x2i = Mat<int, 2, 2>;
+    using Mat3x3i = Mat<int, 3, 3>;
+    using Mat4x4i = Mat<int, 4, 4>;
 }

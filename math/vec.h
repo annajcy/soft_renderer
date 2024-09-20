@@ -27,11 +27,12 @@ namespace math {
 				data[i] = vec[i];
 		}
 
-		template<typename N>
-		Vec<T, S>(const std::initializer_list<N>& list) {
+		Vec<T, S>(const std::initializer_list<varied_type>& list) {
 			int x = 0;
-			for (auto i : list) {
-				data[x] = i;
+			for (const auto &i : list) {
+				std::visit([&](auto&& arg) {
+					data[x] = static_cast<T>(arg);
+				}, i);
 				if (++ x == S) return;
 			}
 		}
@@ -202,8 +203,15 @@ namespace math {
 			return os;
 		}
 
-		template<typename N>
-		friend Vec<T, S> operator*(const N& lhs, const Vec<T, S>& rhs) {
+		friend std::ostream& operator<<(std::ostream& os, const Vec<T, S>& vec) requires Floating_point<T> {
+			for (int i = 0; i < S; i++)
+				os << (!sign(vec.data[i]) ? (decimal)0 : vec.data[i]) << ' ';
+			os << std::endl;
+			return os;
+		}
+
+		template<typename N, typename P>
+		friend Vec<T, S> operator*(const N& lhs, const Vec<P, S>& rhs) {
 			Vec<T, S> result;
 			for (int i = 0; i < S; i++)
 				result[i] = lhs * rhs[i];

@@ -191,7 +191,7 @@ public:
 	) {
 		result.clear();
 		math::Triangle2d triangle(a, b, c);
-		auto [left_buttom, right_top] = triangle.get_AABB();
+		auto [left_buttom, right_top] = triangle.bounding_box();
 		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
 			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
 				std::vector<math::Point2d> sampled_points;
@@ -217,7 +217,7 @@ public:
 		auto &[point_b, color_b] = b;
 		auto &[point_c, color_c] = c;
 		math::Triangle2d triangle(point_a, point_b, point_c);
-		auto [left_buttom, right_top] = triangle.get_AABB();
+		auto [left_buttom, right_top] = triangle.bounding_box();
 		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
 			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
 				
@@ -253,7 +253,7 @@ public:
 		auto &[point_b, uv_b] = b;
 		auto &[point_c, uv_c] = c;
 		math::Triangle2d triangle(point_a, point_b, point_c);
-		auto [left_bottom, right_top] = triangle.get_AABB();
+		auto [left_bottom, right_top] = triangle.bounding_box();
 		for (int x = left_bottom.x(); x <= right_top.x(); x ++)
 			for (int y = left_bottom.y(); y <= right_top.y(); y ++) {
 				

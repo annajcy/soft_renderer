@@ -4,6 +4,7 @@
 #include <bits/stdc++.h>
 
 using decimal = double;
+using varied_type = std::variant<float, double, long double, int, long long, char>;
 
 inline decimal PI() { return acos(-1); }
 inline decimal deg_to_rad(decimal angle) { return  angle / 180.0 * PI(); }
@@ -30,29 +31,27 @@ concept Equal = (P == Q);
 
 constexpr double eps = 1e-8;
 
-
-
-template<Floating_point T>
-bool equal(const T& a, const T&b) {
+bool equal(const decimal& a, const decimal& b) {
     return (std::fabs(a - b) < eps);
 }
 
-template<Floating_point T>
-int sign(const T& x) {
+int sign(const decimal& x) {
     if (x < -eps) return -1;
     if (x > eps) return 1;
     return 0; 
 }
 
-template<Floating_point T>
-int cmp(const T& x, const T& y) {
+int cmp(const decimal& x, const decimal& y) {
     if (fabs(x - y) < eps) return 0;
     if (x < y) return -1;
     return 1;
 }
 
-template <Arithmetic T>
-void clamp(T& v, const T& min, const T& max) {
+void clamp(decimal& v, const decimal& min, const decimal& max) {
+    v = std::min(v, max), v = std::max(v, min);
+}
+
+void clamp(int& v, const int& min, const int& max) {
     v = std::min(v, max), v = std::max(v, min);
 }
 
