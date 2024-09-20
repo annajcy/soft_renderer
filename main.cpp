@@ -234,6 +234,61 @@ void test_matrix_determinant() {
 }
 
 
+template<typename T, int S>
+void test_matrix_inversion(const math::Mat<T, S, S>& mat) {
+    std::cout << "Original Matrix:" << std::endl;
+    std::cout << mat << std::endl;
+
+    try {
+        auto inverse = mat.inv();
+        std::cout << "Inverse Matrix:" << std::endl;
+        std::cout << inverse << std::endl;
+    } catch (const std::runtime_error& e) {
+        std::cout << "Error: " << e.what() << std::endl;
+    }
+}
+
+
+void test_inversion() {
+    math::Mat<double, 2, 2> mat = {
+        {4, 7},
+        {2, 6}
+    };
+
+    std::cout << mat.adjugate() << std::endl;
+
+    test_matrix_inversion(mat);
+
+    // math::Mat<double, 2, 3> mat1 = {
+    //     {1, 2, 3},
+    //     {4, 5, 6}
+    // };
+
+    // auto inverse = mat1.inv(); 
+
+    math::Mat<double, 3, 3> mat2 = {
+        {2, 4, 1},
+        {8, 16, 4},
+        {0, 0, 0}
+    };
+
+    try {
+        auto inverse = mat2.inv();
+    } catch (const std::runtime_error& e) {
+        std::cout << e.what() << std::endl;
+    }
+
+    math::Mat<double, 3, 3> mat3 = {
+        {1, 2, 3},
+        {0, 1, 4},
+        {5, 6, 0}
+    };
+
+    auto inverse = mat3.inv();
+    std::cout << inverse << std::endl;
+}
+
+
 int main()
 {
     test_zero_matrix();
@@ -245,6 +300,7 @@ int main()
     test_matrix_multiplication();
 	test_block();
 	test_matrix_determinant();
+    test_inversion();
 
     std::cout << "All tests passed!" << std::endl;
     return 0;

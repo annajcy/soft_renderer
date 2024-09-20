@@ -13,29 +13,19 @@ namespace math {
 
 	public:
 
-		static Vec<T, S> zeros() {
-			return Vec<T, S>(0);
-		}
-
-		static Vec<T, S> ones() {
-			return Vec<T, S>(1);
-		}
+		static Vec<T, S> zeros() { return Vec<T, S>(0); }
+		static Vec<T, S> ones() { return Vec<T, S>(1); }
 
 		Vec<T, S>() : data{} { }
-
-		explicit Vec<T, S>(int value) {
-			data.fill(value);
-		}
-
+		explicit Vec<T, S>(int value) { data.fill(value); }
 		Vec<T, S>(const Vec<T, S>& vec) : data(vec.data) { }
+		Vec<T, S>(Vec<T, S>&& vec) noexcept : data(std::move(vec.data)) { }
 
 		template<typename Q, int N>
 		explicit Vec<T, S>(const Vec<Q, N>& vec) {
 			for (int i = 0; i < std::min(N, S); i++)
 				data[i] = vec[i];
 		}
-
-		Vec<T, S>(Vec<T, S>&& vec) noexcept : data(std::move(vec.data)) { }
 
 		template<typename N>
 		Vec<T, S>(const std::initializer_list<N>& list) {

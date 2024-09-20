@@ -194,10 +194,8 @@ namespace math {
 
         template<typename N>
         Mat<T, S, V>& operator*=(const Mat<N, S, V>& rhs) requires Equal<int, S, V> {
-            for (int i = 0; i < S; i ++)
-                for (int j = 0; j < S; j ++)
-                    for (int k = 0; k < S; k ++)
-                        this->at(i, k) *= rhs.at(k, j);
+            Mat<T, S, V> temp = *this * rhs;
+            *this = std::move(temp);
             return *this;
         }
 
@@ -238,12 +236,39 @@ namespace math {
         }
 
         Mat<T, S, V> inv() const requires Equal<int, S, V> {
-            //TODO
+            auto adjugate = this->adjugate();
+            T determinant = this->det();
+            if (!determinant) throw std::runtime_error("Matrix is singular and cannot be inverted.");
+            return adjugate / determinant;
         }
 
-        Mat<T, S, V> echelon_form() {
-            //TODO
+        Mat<T, S, V> adjugate() const {
+            Mat<T, S, V> mat;
+            for (int i = 0; i < S; i++) 
+                for (int j = 0; j < V; j++) {
+                    T cofactor = this->minor(i, j).det();
+                    mat.at(j, i) = (((i + j) & 1) ? -1 : 1) * cofactor;
+                }
+            return mat;
         }
+
+        template<typename N>
+        Mat<T, S, V>& operator/=(const N& scalar) {
+            for (int i = 0; i < S; i++)
+                for (int j = 0; j < V; j++)
+                    this->at(i, j) /= scalar;
+            return *this;
+        }
+
+        template<typename N>
+        Mat<T, S, V> operator/(const N& scalar) const {
+            Mat<T, S, V> mat;
+            for (int i = 0; i < S; i++)
+                for (int j = 0; j < V; j++)
+                    mat.at(i, j) = this->at(i, j) / scalar;
+            return mat;
+        }
+
 
         friend std::ostream& operator<<(std::ostream& os, const Mat<T, S, V>& mat) {
             for (int i = 0; i < S; i ++) {
