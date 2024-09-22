@@ -13,6 +13,16 @@ namespace math {
 	using Vector3d = Vec3f;
 	using UV = Vec2f;
 
+	template<typename T>
+	inline T cross(const Vec<T, 2>& a, const Vec<T, 2>& b) {
+		return a.x() * b.y() - a.y() * b.x();
+	} 
+
+	template<typename T>
+	inline Vec<T, 3> cross(const Vec<T, 3>& a, const Vec<T, 3>& b) {
+		return Vec<T, 3>{a.y() * b.z() - a.z() * b.y(), -(a.x() * b.z() - a.z() * b.x()), a.x() * b.y() - a.y() * b.x()};
+	}
+
 	inline void sample_pixel(std::vector<Point2d>& result, const Pixel& pixel, int scale) {
 		result.clear();
 		decimal stride = 1.0 / scale;
@@ -28,7 +38,7 @@ namespace math {
 	}
 
 	inline Point2d pixel_to_point2d(const Pixel& pixel) {
-		return Point2d({pixel.x() + 0.5f, pixel.y() + 0.5f});
+		return Point2d({pixel.x() + 0.5, pixel.y() + 0.5});
 	}
 
 	inline Pixel point2d_to_pixel(const Point2d& point) {
@@ -44,16 +54,6 @@ namespace math {
 		if (to_buttom > to_top) y = top;
 		else y = buttom;
 		return Pixel({x, y});
-	}
-
-	template<typename T>
-	inline T cross(const Vec<T, 2>& a, const Vec<T, 2>& b) {
-		return a.x() * b.y() - a.y() * b.x();
-	} 
-
-	template<typename T>
-	inline Vec<T, 3> cross(const Vec<T, 3>& a, const Vec<T, 3>& b) {
-		return Vec<T, 3>{a.y() * b.z() - a.z() * b.y(), -(a.x() * b.z() - a.z() * b.x()), a.x() * b.y() - a.y() * b.x()};
 	}
 
 	struct Triangle2d {

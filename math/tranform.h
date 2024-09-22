@@ -14,6 +14,9 @@ namespace math {
 	inline Point2d to_point(const Homo2d& v) { return Point2d{v.x() / v.z(), v.y() / v.z()}; }
 	inline Point3d to_point(const Homo3d& v) { return Point3d{v.x() / v.w(), v.y() / v.w(), v.z() / v.w()}; } 
 
+	inline Homo2d normalize_homo_point(const Homo2d& v) { return Homo2d{v.x() / v.z(), v.y() / v.z(), 1.0}; }
+	inline Homo3d normalize_homo_point(const Homo3d& v) { return Homo3d{v.x() / v.w(), v.y() / v.w(), v.z() / v.w(), 1.0}; } 
+
 	inline Homo2d homo_vector(decimal x, decimal y) { return Homo2d{x, y, 0.0}; }
 	inline Homo3d homo_vector(decimal x, decimal y, decimal z) { return Homo3d{x, y, z, 0.0}; } 
 
@@ -150,4 +153,67 @@ namespace math {
         	{0.0, 0.0, 0.0, 1.0}
     	};
 	}
+
+	inline Transform3d model(const Transform3d& rotate, const Transform3d& translate) {
+		return translate * rotate;
+	}
+
+	inline Transform3d veiw(const Transform3d& rotate, const Transform3d& translate) {
+		return rotate.inv() * translate.inv();
+	}
+
+	//assume front and top are normalized vector
+	inline Transform3d veiw(const Vector3d& front, const Vector3d& top, const Vector3d& position) {
+		auto right = cross(front, top).normalize();
+		auto up = cross(right, front).normalize();
+		return Transform3d{
+			{right.x(), right.y(), right.z(), -right.dot(position)},
+			{up.x(), up.y(), up.z(), -up.dot(position)},
+			{-front.x(), -front.y(), -front.z(), front.dot(position)},
+			{0.0, 0.0, 0.0, 1.0}
+		};
+	}
+
+	//far repesent the abs value of the coordination of the fear plane
+	inline Transform3d projection_orthogonal(decimal near, decimal far, decimal top, decimal bottom, decimal left, decimal right) {
+		return Transform3d{
+			{2.0 / (right - left), 0.0, 0.0, -(right + left) / (right - left)},
+			{0.0, 2.0 / (top - bottom), 0.0, -(top + bottom) / (top - bottom)},
+			{0.0, 0.0, 2.0 / (far - near), -(far + near) / (far - near)},
+			{0.0, 0.0, 0.0, 1.0}
+		};
+	}
+
+	//tranform into clip space
+	inline Transform3d projection_perspective(decimal near, decimal far, decimal top, decimal bottom, decimal left, decimal right) {
+		return Transform3d{
+			{2.0 * near/ (right - left), 0.0, (right + left) / (right - left), 0.0},
+			{0.0, 2.0 * near / (top - bottom), (top + bottom) / (top - bottom), 0.0},
+			{0.0, 0.0, -(far + near) / (far - near), -2.0 * far * near / (far - near)},
+			{0.0, 0.0, -1.0, 0.0}
+		};
+	}
+
+	//tranform into clip space
+	inline Transform3d projection_perspective(decimal fov, decimal aspect_ratio, decimal near, decimal far) {
+		auto half_fov = deg_to_rad(fov / 2.0);
+		return Transform3d{
+			{1.0 / aspect_ratio * tan(half_fov), 0.0, 0.0, 0.0},
+			{0.0, 1.0 / tan(half_fov), 0.0, 0.0},
+			{0.0, 0.0, -(far + near) / (far - near), -2.0 * far * near / (far - near)},
+			{0.0, 0.0, -1.0, 0.0}
+		};
+	}
+
+	//tranform ndc to screen space
+	inline Transform3d screen(int width, int height) {
+		return Transform3d{
+			{width / 2.0, 0.0, 0.0, width / 2.0},
+			{0.0, height / 2.0, 0.0, height / 2.0},
+			{0.0, 0.0, 0.5, 0.5},
+			{0.0, 0.0, 0.0, 1.0}
+		};
+	}
+
+	
 }

@@ -31,27 +31,27 @@ concept Equal = (P == Q);
 
 constexpr double eps = 1e-8;
 
-bool equal(const decimal& a, const decimal& b) {
+inline bool equal(const decimal& a, const decimal& b) {
     return (std::fabs(a - b) < eps);
 }
 
-int sign(const decimal& x) {
+inline int sign(const decimal& x) {
     if (x < -eps) return -1;
     if (x > eps) return 1;
     return 0; 
 }
 
-int cmp(const decimal& x, const decimal& y) {
+inline int cmp(const decimal& x, const decimal& y) {
     if (fabs(x - y) < eps) return 0;
     if (x < y) return -1;
     return 1;
 }
 
-void clamp(decimal& v, const decimal& min, const decimal& max) {
+inline void clamp(decimal& v, const decimal& min, const decimal& max) {
     v = std::min(v, max), v = std::max(v, min);
 }
 
-void clamp(int& v, const int& min, const int& max) {
+inline void clamp(int& v, const int& min, const int& max) {
     v = std::min(v, max), v = std::max(v, min);
 }
 

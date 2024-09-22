@@ -312,7 +312,6 @@ public:
 					}
 				}
 
-				//std::cout << u << ' ' << v << std::endl;
 				result.push_back({{x, y}, image.at_uv(u, v, bilinear, warp_mode)});
 
 			}
