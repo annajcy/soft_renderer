@@ -53,8 +53,8 @@ void test() {
 
 int main()
 {
-	app->init(width, height, app_id);
-	gpu->init(app->canvas);
+	gpu->init(width, height);
+	app->init(width, height, app_id, gpu->color_buffer());
 
 	while (app->active) {
 

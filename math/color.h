@@ -4,9 +4,16 @@
 #include "lerp.h"
 
 namespace math {
+
+	struct BGR {
+		u_int8_t b{ 0 }, g{ 0 }, r{ 0 };
+		BGR() = default;
+	};
+
 	struct Color  {
 	public:
 		uint8_t r{ 255 }, g{ 255 }, b{ 255 }, a{ 255 };
+
 		Color(): r(255), g(255), b(255), a(255) { }
 		explicit Color(decimal alpha): r(255), g(255), b(255), a(255 * alpha) { }
 		explicit Color(int a_): r(255), g(255), b(255), a(a_) { }

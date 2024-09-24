@@ -17,24 +17,35 @@ private:
 
 public:
     cv::String app_id{ "app" };
-    cv::Mat* canvas{ nullptr };
-    int width{ 0 };
+    cv::Mat canvas{};
+	std::shared_ptr<u_int8_t[]> canvas_buffer{ nullptr };
+	int width{ 0 };
     int height{ 0 };
     bool active{ false };
 
     Application() = default;
 
     ~Application() {
-        delete canvas;
-        delete instance;
+		canvas_buffer = nullptr;
     }
 
-    void init(int width_ = 0, int height_ = 0, const std::string &app_id_ = "app") {
+    void init(int width_, int height_, const std::string &app_id_ , u_int8_t* frame_buffer) {
+	    if (!frame_buffer) throw std::invalid_argument("invalid frame buffer");
+	    canvas_buffer = std::shared_ptr<u_int8_t[]>(frame_buffer, [](u_int8_t*) { });
         app_id = app_id_, width = width_, height = height_, active = true;
-        canvas = new cv::Mat(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
+        canvas = cv::Mat(height, width, CV_8UC3, canvas_buffer.get());
         cv::namedWindow(app_id, cv::WINDOW_NORMAL);
         cv::resizeWindow(app_id, width, height);
     }
+
+	void init(int width_, int height_, const std::string &app_id_ , const std::shared_ptr<u_int8_t[]>& frame_buffer) {
+		if (!frame_buffer) throw std::invalid_argument("invalid frame buffer");
+		canvas_buffer = frame_buffer;
+		app_id = app_id_, width = width_, height = height_, active = true;
+		canvas = cv::Mat(height, width, CV_8UC3, canvas_buffer.get());
+		cv::namedWindow(app_id, cv::WINDOW_NORMAL);
+		cv::resizeWindow(app_id, width, height);
+	}
 
     static Application* get_instance() {
         if (instance == nullptr) {
@@ -58,10 +69,10 @@ public:
     }
 
     void update() const {
-        cv::imshow(app_id, *canvas);
+        cv::imshow(app_id, canvas);
     }
 
-    void exit() {
+    static void exit() {
         cv::destroyAllWindows();
     }
     
