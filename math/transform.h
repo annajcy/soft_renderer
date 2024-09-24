@@ -25,16 +25,7 @@ namespace math {
 	inline Homo2d to_homo_vector(const Vector2d& v) { return Homo2d{v.x(), v.y(), 0.0}; }
 	inline Homo3d to_homo_vector(const Vector3d& v) { return Homo3d{v.x(), v.y(), v.z(), 0.0}; } 
 
-	using Transform2d = Mat3x3;
 	using Transform3d = Mat4x4;
-
-	inline Transform2d translate(decimal tx, decimal ty) { 
-		return Transform2d{
-			{1.0, 0.0, tx},
-			{0.0, 1.0, ty},
-			{0.0, 0.0, 1.0}
-		}; 
-	}
 
 	inline Transform3d translate(decimal tx, decimal ty, decimal tz) { 
 		return Transform3d{
@@ -42,16 +33,6 @@ namespace math {
 			{0.0, 1.0, 0.0, ty},
 			{0.0, 0.0, 1.0, tz},
 			{0.0, 0.0, 0.0, 1.0}
-		}; 
-	}
-
-	inline Transform2d rotate(decimal theta) { 
-		decimal sin_theta = std::sin(deg_to_rad(theta));
-		decimal cos_theta = std::cos(deg_to_rad(theta));
-		return Transform2d{
-			{cos_theta, -sin_theta, 0.0},
-			{sin_theta, cos_theta, 0.0},
-			{0.0, 0.0, 1.0}
 		}; 
 	}
 
@@ -88,9 +69,10 @@ namespace math {
 		}; 
 	}
 
+	//rotate by axis
 	inline Transform3d rotate(const Vector3d& axis, decimal theta) { 
 		auto n = axis.normalize();
-		auto x = n.x(), y = n.y(), z = n.z();
+		decimal x = n.x(), y = n.y(), z = n.z();
 		decimal sin_theta = std::sin(deg_to_rad(theta));
 		decimal cos_theta = std::cos(deg_to_rad(theta));
 		return Transform3d{
@@ -101,14 +83,17 @@ namespace math {
 		};
 	}
 
-	inline Transform2d scale(decimal factor_x, decimal factor_y) { 
-		return Transform2d{
-			{factor_x, 0.0, 0.0},
-			{0.0, factor_y, 0.0},
-			{0.0, 0.0, 1.0}
-		}; 
+	//rotate by orthogonal base
+	inline Transform3d rotate(const Vector3d& i, const Vector3d& j, const Vector3d& k) {
+		return Transform3d {
+			{i.x(), j.x(), k.x(), 0.0},
+			{i.y(), j.y(), k.y(), 0.0},
+			{i.z(), j.z(), k.z(), 0.0},
+			{0.0, 0.0, 0.0, 1.0}
+		};
 	}
 
+	//scale
 	inline Transform3d scale(decimal factor_x, decimal factor_y, decimal factor_z) { 
 		return Transform3d{
 			{factor_x, 0.0, 0.0, 0.0},
@@ -118,36 +103,10 @@ namespace math {
 		}; 
 	}
 
-	//direction : 0 -> horizontal, 1 -> vertical
-	inline Transform2d shear(decimal factor, bool direction) {
-		if (!direction) {
-			return Transform2d{
-				{1.0, factor, 0.0},
-				{0.0, 1.0, 0.0},
-				{0.0, 0.0, 1.0}
-			}; 
-		} else {
-			return Transform2d{
-				{1.0, 0.0, 0.0},
-				{factor, 1.0, 0.0},
-				{0.0, 0.0, 1.0}
-			}; 
-		}
-	}
-
-	inline Transform2d mirror(const Vector2d& axis) {
+	//TODO : TEST
+	inline Transform3d mirror(const Vector3d& axis) {
 		auto n = axis.normalize();
-		auto x = n.x(), y = n.y();
-		return Transform2d{
-			{2 * x * x - 1.0, 2.0 * x * y, 0.0},
-			{2.0 * x * y, 2 * y * y - 1.0, 0.0},
-			{0.0, 0.0, 1.0}
-		}; 
-	}
-
-	inline Transform3d mirror(const Vector3d& normal) {
-		auto n = normal.normalize();
-		auto x = n.x(), y = n.y(), z = n.z();
+		decimal x = n.x(), y = n.y(), z = n.z();
 		return Transform3d{
         	{2 * x * x - 1.0, 2 * x * y, 2 * x * z, 0.0},
         	{2 * x * y, 2 * y * y - 1.0, 2 * y * z, 0.0},
@@ -160,62 +119,42 @@ namespace math {
 		return translate * rotate;
 	}
 
-	inline Transform3d veiw(const Transform3d& rotate, const Transform3d& translate) {
-		return rotate.inv() * translate.inv();
-	}
-
 	//assume front and top are normalized vector
-	inline Transform3d veiw(const Vector3d& front, const Vector3d& top, const Vector3d& position) {
+	inline Transform3d view(const Vector3d& front, const Vector3d& top, const Vector3d& position) {
 		auto right = cross(front, top).normalize();
 		auto up = cross(right, front).normalize();
-		return Transform3d{
-			{right.x(), right.y(), right.z(), -right.dot(position)},
-			{up.x(), up.y(), up.z(), -up.dot(position)},
-			{-front.x(), -front.y(), -front.z(), front.dot(position)},
-			{0.0, 0.0, 0.0, 1.0}
-		};
+		auto ret = (translate(position.x(), position.y(), position.z()) * rotate(right, up, -front)).inv();
+		return ret;
+
 	}
 
-	//far repesent the abs value of the coordination of the fear plane
+	//far represent the abs value of the coordination of the fear plane
 	inline Transform3d projection_orthogonal(decimal near, decimal far, decimal top, decimal bottom, decimal left, decimal right) {
-		return Transform3d{
-			{2.0 / (right - left), 0.0, 0.0, -(right + left) / (right - left)},
-			{0.0, 2.0 / (top - bottom), 0.0, -(top + bottom) / (top - bottom)},
-			{0.0, 0.0, 2.0 / (far - near), -(far + near) / (far - near)},
-			{0.0, 0.0, 0.0, 1.0}
-		};
+		return translate(-(right + left) * 0.5, -(top + bottom) * 0.5, -(far + near) * 0.5) *
+				scale(2.0 / (right - left), 2.0 / (top - bottom), 2.0 / (near - far)) ;
 	}
 
-	//tranform into clip space
-	inline Transform3d projection_perspective(decimal near, decimal far, decimal top, decimal bottom, decimal left, decimal right) {
-		return Transform3d{
-			{2.0 * near/ (right - left), 0.0, (right + left) / (right - left), 0.0},
-			{0.0, 2.0 * near / (top - bottom), (top + bottom) / (top - bottom), 0.0},
-			{0.0, 0.0, -(far + near) / (far - near), -2.0 * far * near / (far - near)},
-			{0.0, 0.0, -1.0, 0.0}
-		};
-	}
-
-	//tranform into clip space
+	//transform into clip space
 	inline Transform3d projection_perspective(decimal fov, decimal aspect_ratio, decimal near, decimal far) {
 		auto half_fov = deg_to_rad(fov / 2.0);
-		return Transform3d{
-			{1.0 / aspect_ratio * tan(half_fov), 0.0, 0.0, 0.0},
-			{0.0, 1.0 / tan(half_fov), 0.0, 0.0},
-			{0.0, 0.0, -(far + near) / (far - near), -2.0 * far * near / (far - near)},
-			{0.0, 0.0, -1.0, 0.0}
+		auto top = tan(half_fov) * -near, bottom = -top;
+		auto right = aspect_ratio * top, left = -right;
+
+		auto perspective_to_orthogonal = Transform3d {
+			{near, 0.0, 0.0, 0.0},
+			{0.0, near, 0.0, 0.0},
+			{0.0, 0.0, (near + far), - near * far},
+			{0.0, 0.0, 1.0, 0.0},
 		};
+
+		auto result = projection_orthogonal(near, far, top, bottom, left, right) * perspective_to_orthogonal;
+		return result;
 	}
 
-	//tranform ndc to screen space
+	//transform ndc to screen space
 	inline Transform3d screen(int width, int height) {
-		return Transform3d{
-			{width / 2.0, 0.0, 0.0, width / 2.0},
-			{0.0, height / 2.0, 0.0, height / 2.0},
-			{0.0, 0.0, 0.5, 0.5},
-			{0.0, 0.0, 0.0, 1.0}
-		};
+		return translate(width * 0.5 , height * 0.5, 0.0) *
+				scale(width * 0.5 , height * 0.5, 1.0);
 	}
 
-	
 }

@@ -21,34 +21,34 @@ namespace math {
         }
 
         template<typename N, int P> 
-        static Mat<T, S, V>to_matrix(const std::vector<math::Vec<N, P>>& vecs, bool transpose = false) {
+        static Mat<T, S, V>to_matrix(const std::vector<math::Vec<N, P>>& vec_s, bool transpose = false) {
             Mat<T, S, V> mat;
             if (transpose) {
-                for (int i = 0; i < std::min(S, (int)vecs.size()); i ++) {
+                for (int i = 0; i < std::min(S, (int)vec_s.size()); i ++) {
                     for (int j = 0; j < std::min(V, P); j ++)
-                        mat.at(i, j) = vecs[i][j];
+                        mat.at(i, j) = vec_s[i][j];
                 }
             } else {
-                for (int j = 0; j < std::min(V, (int)vecs.size()); j ++) {
+                for (int j = 0; j < std::min(V, (int)vec_s.size()); j ++) {
                     for (int i = 0; i < std::min(S, P); i ++)
-                        mat.at(i, j) = vecs[j][i];
+                        mat.at(i, j) = vec_s[j][i];
                 }
             }
             return mat;
         }
 
         template<typename N, int P> 
-        static Mat<T, S, V>to_matrix(math::Vec<N, P>& vecs, bool transpose = false) {
+        static Mat<T, S, V>to_matrix(math::Vec<N, P>& vec_s, bool transpose = false) {
             Mat<T, S, V> mat;
             if (transpose) {
                 for (int i = 0; i < S; i ++) {
                     for (int j = 0; j < std::min(V, P); j ++)
-                        mat.at(i, j) = vecs[j];
+                        mat.at(i, j) = vec_s[j];
                 }
             } else {
                 for (int j = 0; j < V; j ++) {
                     for (int i = 0; i < std::min(S, P); i ++)
-                        mat.at(i, j) = vecs[i];
+                        mat.at(i, j) = vec_s[i];
                 }
             }
             return mat;
@@ -60,38 +60,38 @@ namespace math {
         Mat<T, S, V>(Mat<T, S, V>&& mat) noexcept : data(std::move(mat.data)) { }
 
         template<typename N, int P, int Q>
-        Mat<T, S, V>(const Mat<N, P, Q>& mat) {
+        explicit Mat<T, S, V>(const Mat<N, P, Q>& mat) {
             for (int i = 0; i < std::min(P, S); i ++)
                 for (int j = 0; j < std::min(V, Q); j ++)
                     this->at(i, j) = mat.at(i, j);
         }
 
         template<typename N, int P> 
-        Mat<T, S, V>(const std::vector<math::Vec<N, P>>& vecs, bool transpose = false) {
+        explicit Mat<T, S, V>(const std::vector<math::Vec<N, P>>& vec_s, bool transpose = false) {
             if (transpose) {
-                for (int i = 0; i < std::min(S, vecs.size()); i ++) {
+                for (int i = 0; i < std::min(S, vec_s.size()); i ++) {
                     for (int j = 0; j < std::min(V, P); j ++)
-                        this->at(i, j) = vecs[i][j];
+                        this->at(i, j) = vec_s[i][j];
                 }
             } else {
-                for (int j = 0; j < std::min(V, vecs.size()); j ++) {
+                for (int j = 0; j < std::min(V, vec_s.size()); j ++) {
                     for (int i = 0; i < std::min(S, P); j ++)
-                        this->at(i, j) = vecs[j][i];
+                        this->at(i, j) = vec_s[j][i];
                 }
             }
         }
 
         template<typename N, int P> 
-        Mat<T, S, V>(math::Vec<N, P>& vecs, bool transpose = false) {
+        explicit Mat<T, S, V>(math::Vec<N, P>& vec_s, bool transpose = false) {
             if (transpose) {
                 for (int i = 0; i < S; i ++) {
                     for (int j = 0; j < std::min(V, P); j ++)
-                        this->at(i, j) = vecs[j];
+                        this->at(i, j) = vec_s[j];
                 }
             } else {
                 for (int j = 0; j < V; j ++) {
                     for (int i = 0; i < std::min(S, P); j ++)
-                        this->at(i, j) = vecs[i];
+                        this->at(i, j) = vec_s[i];
                 }
             }
         }
@@ -110,7 +110,7 @@ namespace math {
             }
         }
 
-        std::pair<int, int> shape() const { return {S, V}; }
+        [[nodiscard]] std::pair<int, int> shape() const { return {S, V}; }
         
         T& at(int i, int j) {
             if (i < 0 || i >= S) throw std::out_of_range("Error: Out of range.");
@@ -130,7 +130,7 @@ namespace math {
             return *this;
         }
 
-        Mat<T, S, V>& operator=(Mat<T, S, V>&& rhs) {
+        Mat<T, S, V>& operator=(Mat<T, S, V>&& rhs) noexcept {
             if (this == &rhs) return *this;
             this->data = std::move(rhs.data);
             return *this;
@@ -281,12 +281,11 @@ namespace math {
             return mat;
         }
 
-
         friend std::ostream& operator<<(std::ostream& os, const Mat<T, S, V>& mat) {
             for (int i = 0; i < S; i ++) {
-                for (int j = 0; j < V; j ++) 
-                    std::cout << mat.at(i, j) << ' ';
-                std::cout << std::endl;
+                for (int j = 0; j < V; j ++)
+	                os << mat.at(i, j) << ' ';
+	            os << std::endl;
             }
             return os;
         }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "base.h"
 #include "vec.h"
 #include "mat.h"
@@ -43,39 +45,39 @@ namespace math {
 
 	inline Pixel point2d_to_pixel(const Point2d& point) {
 		auto left = std::floor(point.x()), right = std::floor(point.x() + 1);
-		auto buttom = std::floor(point.y()), top = std::floor(point.y() + 1);
+		auto bottom = std::floor(point.y()), top = std::floor(point.y() + 1);
 		auto to_left = point.x() - left;
 		auto to_right = right - point.x();
-		auto to_buttom = point.y() - buttom;
+		auto to_bottom = point.y() - bottom;
 		auto to_top = top - point.y();
 		int x, y;
 		if (to_left > to_right) x = right;
 		else x = left;
-		if (to_buttom > to_top) y = top;
-		else y = buttom;
+		if (to_bottom > to_top) y = top;
+		else y = bottom;
 		return Pixel({x, y});
 	}
 
 	struct Triangle2d {
 		Point2d a, b, c;
 
-		Triangle2d() {}
-		Triangle2d(Point2d a_, Point2d b_, Point2d c_) : a(a_), b(b_), c(c_) {}
-		Triangle2d(Pixel a_, Pixel b_, Pixel c_) : a(pixel_to_point2d(a_)), b(pixel_to_point2d(b_)), c(pixel_to_point2d(c_)) {}
+		Triangle2d() = default;
+		Triangle2d(Point2d a_, Point2d b_, Point2d c_) : a(std::move(a_)), b(std::move(b_)), c(std::move(c_)) {}
+		Triangle2d(const Pixel& a_, const Pixel& b_, const Pixel& c_) : a(pixel_to_point2d(a_)), b(pixel_to_point2d(b_)), c(pixel_to_point2d(c_)) {}
 
-		decimal area() const {
+		[[nodiscard]] decimal area() const {
 			Vector2d ab = b - a, ac = c - a;
 			return std::fabs(cross(ab, ac)) / 2;
 		}
 
-		bool enclose(const Point2d& p) const {
+		[[nodiscard]] bool enclose(const Point2d& p) const {
 			Vector2d pa = a - p, pb = b - p, pc = c - p;
 			bool all_positive = cross(pa, pb) > 0 && cross(pb, pc) > 0 && cross(pc, pa) > 0;
 			bool all_negative = cross(pa, pb) < 0 && cross(pb, pc) < 0 && cross(pc, pa) < 0;
 			return all_positive || all_negative;
 		}
 
-		std::pair<Pixel, Pixel> bounding_box() const {
+		[[nodiscard]] std::pair<Pixel, Pixel> bounding_box() const {
 			int min_x = std::min({a.x(), b.x(), c.x()});
 			int min_y = std::min({a.y(), b.y(), c.y()});
 			int max_x = std::max({a.x(), b.x(), c.x()});
@@ -88,22 +90,20 @@ namespace math {
 	struct Line2d {
 		Point2d a, b;
 
-		Line2d() {}
-		Line2d(Point2d a_, Point2d b_) : a(a_), b(b_) {}
-		Line2d(Pixel a_, Pixel b_) : a(pixel_to_point2d(a_)), b(pixel_to_point2d(b_)) {}
+		Line2d() = default;
+		Line2d(Point2d  a_, Point2d  b_) : a(std::move(a_)), b(std::move(b_)) {}
+		Line2d(const Pixel& a_, const Pixel& b_) : a(pixel_to_point2d(a_)), b(pixel_to_point2d(b_)) {}
 
-		Vector2d direction() const { return b - a; } 
+		[[nodiscard]] Vector2d direction() const { return b - a; }
 
 		//return 0: on line
 		//return 1: on left
 		//return -1: on right
-		bool check_position(Point2d p) const {
+		[[nodiscard]] bool check_position(const Point2d& p) const {
 			Vector2d pa = p - a, pb = p - b;
 			return sign(cross(pa, pb));
 		}
 	};
-
-	
 
 }
 

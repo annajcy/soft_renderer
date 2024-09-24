@@ -3,6 +3,7 @@
 #include "base.h"
 #include "color.h"
 #include "frame_buffer.h"
+#include "shader.h"
 
 #define gpu GPU::get_instance()
 

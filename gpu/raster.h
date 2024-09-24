@@ -26,8 +26,8 @@ public:
 		bool down = false, surge = false;
 		result.clear();
 
-		auto delta_x = b.x() - a.x();
-		auto delta_y = b.y() - a.y();
+		int delta_x = b.x() - a.x();
+		int delta_y = b.y() - a.y();
 
 		if (delta_y < 0) {
 			b.y() = -b.y(), a.y() = -a.y();
@@ -89,9 +89,9 @@ public:
 
 		bool down = false, surge = false;
 		result.clear();
-		
-		auto delta_x = b.x() - a.x();
-		auto delta_y = b.y() - a.y();
+
+		int delta_x = b.x() - a.x();
+		int delta_y = b.y() - a.y();
 
 		if (delta_y < 0) {
 			b.y() = -b.y(), a.y() = -a.y();
@@ -147,8 +147,8 @@ public:
 		bool down = false, surge = false;
 		result.clear();
 
-		auto delta_x = b.x() - a.x();
-		auto delta_y = b.y() - a.y();
+		decimal delta_x = b.x() - a.x();
+		decimal delta_y = b.y() - a.y();
 
 		if (delta_y < 0) {
 			b.y() = -b.y(), a.y() = -a.y();
@@ -191,9 +191,9 @@ public:
 	) {
 		result.clear();
 		math::Triangle2d triangle(a, b, c);
-		auto [left_buttom, right_top] = triangle.bounding_box();
-		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
-			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
+		auto [left_bottom, right_top] = triangle.bounding_box();
+		for (int x = left_bottom.x(); x <= right_top.x(); x ++)
+			for (int y = left_bottom.y(); y <= right_top.y(); y ++) {
 				std::vector<math::Point2d> sampled_points;
 				math::sample_pixel(sampled_points, {x, y}, scale);
 				int enclosed = 0;
@@ -217,9 +217,9 @@ public:
 		auto &[point_b, color_b] = b;
 		auto &[point_c, color_c] = c;
 		math::Triangle2d triangle(point_a, point_b, point_c);
-		auto [left_buttom, right_top] = triangle.bounding_box();
-		for (int x = left_buttom.x(); x <= right_top.x(); x ++) 
-			for (int y = left_buttom.y(); y <= right_top.y(); y ++) {
+		auto [left_bottom, right_top] = triangle.bounding_box();
+		for (int x = left_bottom.x(); x <= right_top.x(); x ++)
+			for (int y = left_bottom.y(); y <= right_top.y(); y ++) {
 				
 				std::vector<math::Point2d> sampled_points;
 				math::sample_pixel(sampled_points, {x, y}, scale);
@@ -305,7 +305,7 @@ public:
 				} else {
 					if (fill_mode == FILL_MODE::FIT_HEIGHT) {
 						u = (decimal)j / width * width / height / image.ratio(), v = (decimal)i / height; 
-					} else if (fill_mode == FILL_MODE::FIT_WITDTH) {
+					} else if (fill_mode == FILL_MODE::FIT_WIDTH) {
 						u = (decimal)j / width, v = (decimal)i / height * height / width * image.ratio(); 
 					} else {
 						u = (decimal)j / image.width, v = (decimal)i / image.height; 

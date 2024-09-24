@@ -11,7 +11,7 @@ enum WRAP_MODE {
 
 enum FILL_MODE {
     FLATTEN,
-    FIT_WITDTH,
+    FIT_WIDTH,
     FIT_HEIGHT,
 };
 
@@ -23,7 +23,7 @@ public:
     int width, height;
     Image(int width_, int height_) : width(width_), height(height_), data(std::make_unique<math::Color[]>(width_ * height_)) { }
 
-    Image(const std::string& path) {
+    explicit Image(const std::string& path) {
         cv::Mat image = cv::imread(path, cv::IMREAD_UNCHANGED);
 
         if (image.empty()) throw std::runtime_error("Error: Unable to load image");
@@ -59,10 +59,10 @@ public:
             }      
     } 
 
-    Image(Image&& image) : width(image.width), height(image.height), data(std::move(image.data)) { }
+    Image(Image&& image) noexcept : width(image.width), height(image.height), data(std::move(image.data)) { }
 
-	int size() const { return width * height; }
-    decimal ratio() const { return (decimal)width / height; }
+	[[nodiscard]] int size() const { return width * height; }
+    [[nodiscard]] decimal ratio() const { return (decimal)width / height; }
 
 	math::Color& at(int x, int y) {
         if (x < 0 || x >= width) throw std::out_of_range("Error: Out of bound of image");
@@ -70,13 +70,13 @@ public:
         return data[y * width + x];
     }
 
-	math::Color at(int x, int y) const {
+	[[nodiscard]] math::Color at(int x, int y) const {
         if (x < 0 || x >= width) throw std::out_of_range("Error: Out of bound of image");
         if (y < 0 || y >= height) throw std::out_of_range("Error: Out of bound of image");
         return data[y * width + x];
     }
 
-	math::Color at_uv(decimal u, decimal v, bool bilinear = true, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) const {
+	[[nodiscard]] math::Color at_uv(decimal u, decimal v, bool bilinear = true, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) const {
 		if (bilinear) return at_uv_bilinear(u, v, wrap_mode);
 
         if (wrap_mode == WRAP_MODE::REPEAT) {
@@ -95,7 +95,7 @@ public:
 		return data[y * width + x];
 	}
 
-	math::Color at_uv_bilinear(decimal u, decimal v, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) const {
+	[[nodiscard]] math::Color at_uv_bilinear(decimal u, decimal v, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) const {
 
         if (wrap_mode == WRAP_MODE::REPEAT) {
             if (cmp(u, 0.0) == -1 || cmp(u, 1.0) == 1) u = fraction(u), u = fraction(1 + u);  

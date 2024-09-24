@@ -66,7 +66,7 @@ namespace math {
 		T z() const requires Greater_than<int, S, 3> { return data[2]; }
 		T w() const requires Greater_than<int, S, 4> { return data[3]; }
 
-		int dims() const { return S; }
+		[[nodiscard]] int dims() const { return S; }
 
 		T operator[](int index) const {
 			if (index < 0 || index >= S) throw std::out_of_range("Index out of range");
@@ -172,7 +172,7 @@ namespace math {
 			return result;
 		}
 
-		decimal norm() const {
+		[[nodiscard]] decimal norm() const {
 			decimal result = 0;
 			for (int i = 0; i < S; i++)
 				result += data[i] * data[i];

@@ -8,6 +8,7 @@ namespace math {
 	struct BGR {
 		u_int8_t b{ 0 }, g{ 0 }, r{ 0 };
 		BGR() = default;
+		BGR(u_int8_t b_, u_int8_t g_, u_int8_t r_) : b(b_), g(g_), r(r_) { }
 	};
 
 	struct Color  {
@@ -21,14 +22,14 @@ namespace math {
 		Color(int r_, int g_, int b_, int a_) : r(r_), g(g_), b(b_), a(a_) { }
 		Color(int r_, int g_, int b_, decimal alpha) : r(r_), g(g_), b(b_), a(255 * alpha) { }
 
-		int R() const { return r; }
-		int G() const { return g; }
-		int B() const { return b; }
-		int A() const { return a; }
+		[[nodiscard]] int R() const { return r; }
+		[[nodiscard]] int G() const { return g; }
+		[[nodiscard]] int B() const { return b; }
+		[[nodiscard]] int A() const { return a; }
 
-		static Color red() { return Color(255, 0, 0); }
-		static Color green() { return Color(0, 255, 0); }
-		static Color blue() { return Color(0, 0, 255); }
+		static Color red() { return {255, 0, 0}; }
+		static Color green() { return {0, 255, 0}; }
+		static Color blue() { return {0, 0, 255}; }
 
 		static Color alpha_blend(const Color& foreground, const Color& background) {
 			auto &[r0, g0, b0, _] = background;
@@ -37,7 +38,7 @@ namespace math {
 			uint8_t r = r1 * alpha1 + r0 * (1 - alpha1);
 			uint8_t g = g1 * alpha1 + g0 * (1 - alpha1);
 			uint8_t b = b1 * alpha1 + b0 * (1 - alpha1);
-			return Color(r, g, b);
+			return {r, g, b, 255};
 		}
 
 		static Color interpolate_color(
@@ -77,9 +78,7 @@ namespace math {
 		}
 
 		friend std::ostream& operator<<(std::ostream& os, const Color& color) {
-			std::cout << std::endl;
-			std::cout << "RGBA of color:" << std::endl;
-			std::cout << color.R() << ' ' << color.G() << ' ' << color.B() << ' ' << color.A() << std::endl;
+			os << color.R() << ' ' << color.G() << ' ' << color.B() << ' ' << color.A() << std::endl;
 			return os;
 		}
 
