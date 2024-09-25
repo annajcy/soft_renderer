@@ -5,11 +5,11 @@
 // format of BGR frame buffer
 class Frame_buffer {
 public:
-	int width{0};
-	int height{0};
+	int width{ 0 };
+	int height{ 0 };
 
-	std::shared_ptr<math::BGR[]> color_buffer; // Use shared_ptr
-	std::shared_ptr<decimal[]> depth_buffer;   // Use shared_ptr
+	std::shared_ptr<math::BGR[]> color_buffer{ nullptr }; // Use shared_ptr
+	std::shared_ptr<decimal[]> depth_buffer{ nullptr };   // Use shared_ptr
 
 	Frame_buffer() = default;
 

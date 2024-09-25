@@ -285,7 +285,7 @@ namespace math {
             for (int i = 0; i < S; i ++) {
                 for (int j = 0; j < V; j ++)
 	                os << mat.at(i, j) << ' ';
-	            os << std::endl;
+	            if (i != S - 1) os << std::endl;
             }
             return os;
         }

@@ -199,7 +199,6 @@ namespace math {
 		friend std::ostream& operator<<(std::ostream& os, const Vec<T, S>& vec) {
 			for (int i = 0; i < S; i++)
 				os << vec.data[i] << ' ';
-			os << std::endl;
 			return os;
 		}
 

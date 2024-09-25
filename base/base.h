@@ -3,12 +3,12 @@
 #include <opencv2/opencv.hpp>
 #include <bits/stdc++.h>
 
-using decimal = double;
+using decimal = float;
 using varied_type = std::variant<float, double, long double, int, long long, char>;
 
 inline decimal PI() { return acos(-1); }
-inline decimal deg_to_rad(decimal angle) { return  angle / 180.0 * PI(); }
-inline decimal rad_to_deg(decimal rad) { return  rad / PI() * 180.0; }
+inline decimal deg_to_rad(decimal angle) { return angle / 180.0 * PI(); }
+inline decimal rad_to_deg(decimal rad) { return rad / PI() * 180.0; }
 inline decimal fraction(decimal v) { return v - (int)v; }
 
 template<typename T>

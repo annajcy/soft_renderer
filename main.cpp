@@ -23,66 +23,55 @@ math::Color color3 = math::Color::blue();
 std::vector<std::pair<math::Pixel, math::Color>> points;
 
 void test() {
+	decimal positions[] = {
+			-0.5f, -0.5f, 0.0f,
+			-0.5f, 0.5f, 0.0f,
+			0.5f, -0.5f, 0.0f,
+	};
 
-	auto mirror = math::mirror({1.0, 0.0, 0.0});
-	auto model = math::rotate({0.0, 1.0, 0.0}, angle);
-	auto view = math::view({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
-	auto projection = math::projection_perspective(60.0, (decimal)width / height, -0.1, -100.0);
-	auto screen = math::screen(width, height);
+	decimal colors[] = {
+			1.0f, 0.0f, 0.0f, 1.0f,
+			0.0f, 1.0f, 0.0f, 1.0f,
+			0.0f, 0.0f, 1.0f, 1.0f,
+	};
 
-	std::cout << "pos:\n" << std::endl;
-	std::cout << pos1 << ' ' << pos2 << ' ' << pos3 << std::endl;
+	decimal uvs[] = {
+			0.0f, 0.0f,
+			0.0f, 1.0f,
+			1.0f, 0.0f,
+	};
 
-	auto mirror1 = mirror * pos1;
-	auto mirror2 = mirror * pos2;
-	auto mirror3 = mirror * pos3;
+	int indices[] = { 0, 1, 2 };
 
-	std::cout << "mirror:\n" << std::endl;
-	std::cout << mirror1 << ' ' << mirror2 << ' ' << mirror3 << std::endl;
+	int ebo = gpu->generate(OBJECT::ELEMENT_BUFFER);
+	gpu->bind(OBJECT::ELEMENT_BUFFER, ebo);
+	gpu->set_buffer(OBJECT::ELEMENT_BUFFER, indices, sizeof(indices));
 
-	auto model1 = model * pos1;
-	auto model2 = model * pos2;
-	auto model3 = model * pos3;
+	int vao = gpu->generate(OBJECT::VERTEX_ARRAY);
+	gpu->bind(OBJECT::VERTEX_ARRAY, vao);
 
-//	std::cout << "model:\n" << std::endl;
-//	std::cout << model1 << ' ' << model2 << ' ' << model3 << std::endl;
+	int position_vbo = gpu->generate(OBJECT::VERTEX_BUFFER);
+	gpu->bind(OBJECT::VERTEX_BUFFER, position_vbo);
+	gpu->set_buffer(OBJECT::VERTEX_BUFFER, positions, sizeof(positions));
+	gpu->set_vertex_array({0, sizeof(decimal) * 3, 0, 3});
 
-	auto view1 = view * model1;
-	auto view2 = view * model2;
-	auto view3 = view * model3;
+	int color_vbo = gpu->generate(OBJECT::VERTEX_BUFFER);
+	gpu->bind(OBJECT::VERTEX_BUFFER, color_vbo);
+	gpu->set_buffer(OBJECT::VERTEX_BUFFER, colors, sizeof(colors));
+	gpu->set_vertex_array({1, sizeof(decimal) * 4, 0, 4});
 
-//	std::cout << "view:\n" << std::endl;
-//	std::cout << view1 << ' ' << view2 << ' ' << view3 << std::endl;
+	int uv_vbo = gpu->generate(OBJECT::VERTEX_BUFFER);
+	gpu->bind(OBJECT::VERTEX_BUFFER, uv_vbo);
+	gpu->set_buffer(OBJECT::VERTEX_BUFFER, uvs, sizeof(uvs));
+	gpu->set_vertex_array({2, sizeof(decimal) * 2, 0, 2});
 
-	auto clip1 = projection * view1;
-	auto clip2 = projection * view2;
-	auto clip3 = projection * view3;
+	gpu->bind(OBJECT::VERTEX_BUFFER, 0);
+	gpu->bind(OBJECT::ELEMENT_BUFFER, 0);
+	gpu->bind(OBJECT::VERTEX_ARRAY, 0);
 
-//	std::cout << "projection(clip space):\n" << std::endl;
-//	std::cout << clip1 << ' ' << clip2 << ' ' << clip3 << std::endl;
+	gpu->print_state();
 
-	auto point1 = math::normalize_homo_point(clip1);
-	auto point2 = math::normalize_homo_point(clip2);
-	auto point3 = math::normalize_homo_point(clip3);
 
-//	std::cout << "ndc space:\n" << std::endl;
-//	std::cout << point1 << ' ' << point2 << ' ' << point3 << std::endl;
-
-	auto screen1 = screen * point1;
-	auto screen2 = screen * point2;
-	auto screen3 = screen * point3;
-
-	math::Point2d a(math::to_point(screen1));
-	math::Point2d b(math::to_point(screen2));
-	math::Point2d c(math::to_point(screen3));
-
-//	std::cout << "screen space:\n" << std::endl;
-//	std::cout << a << ' ' << b << ' ' << c << std::endl;
-
-	Raster::triangle_colored(points, {a, color1}, {b, color2}, {c, color3});
-
-	angle += 1.0;
-	//camera_z += 0.01;
 }
 
 int main()
@@ -90,11 +79,11 @@ int main()
 	gpu->init(width, height);
 	app->init(width, height, app_id, gpu->color_buffer());
 
+	test();
+
 	while (app->active) {
 
 		gpu->clear();
-
-		test();
 
 		for (auto &[pixel, color] : points) {
 			gpu->set_pixel(pixel.x(), pixel.y(), color);
