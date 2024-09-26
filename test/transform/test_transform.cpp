@@ -44,29 +44,29 @@ void test() {
 	auto model2 = model * pos2;
 	auto model3 = model * pos3;
 
-//	std::cout << "model:\n" << std::endl;
-//	std::cout << model1 << ' ' << model2 << ' ' << model3 << std::endl;
+	std::cout << "model:\n" << std::endl;
+	std::cout << model1 << ' ' << model2 << ' ' << model3 << std::endl;
 
 	auto view1 = view * model1;
 	auto view2 = view * model2;
 	auto view3 = view * model3;
 
-//	std::cout << "view:\n" << std::endl;
-//	std::cout << view1 << ' ' << view2 << ' ' << view3 << std::endl;
+	std::cout << "view:\n" << std::endl;
+	std::cout << view1 << ' ' << view2 << ' ' << view3 << std::endl;
 
 	auto clip1 = projection * view1;
 	auto clip2 = projection * view2;
 	auto clip3 = projection * view3;
 
-//	std::cout << "projection(clip space):\n" << std::endl;
-//	std::cout << clip1 << ' ' << clip2 << ' ' << clip3 << std::endl;
+	std::cout << "projection(clip space):\n" << std::endl;
+	std::cout << clip1 << ' ' << clip2 << ' ' << clip3 << std::endl;
 
 	auto point1 = math::normalize_homo_point(clip1);
 	auto point2 = math::normalize_homo_point(clip2);
 	auto point3 = math::normalize_homo_point(clip3);
 
-//	std::cout << "ndc space:\n" << std::endl;
-//	std::cout << point1 << ' ' << point2 << ' ' << point3 << std::endl;
+	std::cout << "ndc space:\n" << std::endl;
+	std::cout << point1 << ' ' << point2 << ' ' << point3 << std::endl;
 
 	auto screen1 = screen * point1;
 	auto screen2 = screen * point2;
@@ -76,13 +76,13 @@ void test() {
 	math::Point2d b(math::to_point(screen2));
 	math::Point2d c(math::to_point(screen3));
 
-//	std::cout << "screen space:\n" << std::endl;
-//	std::cout << a << ' ' << b << ' ' << c << std::endl;
+	std::cout << "screen space:\n" << std::endl;
+	std::cout << a << ' ' << b << ' ' << c << std::endl;
 
 	Raster::triangle_colored(points, {a, color1}, {b, color2}, {c, color3});
 
 	angle += 1.0;
-	//camera_z += 0.01;
+	camera_z += 0.01;
 }
 
 int main()

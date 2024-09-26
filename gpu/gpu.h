@@ -5,6 +5,7 @@
 #include "frame_buffer.h"
 #include "buffer_object.h"
 #include "shader.h"
+#include "raster.h"
 
 #define gpu GPU::get_instance()
 
@@ -113,7 +114,7 @@ public:
 	}
 
 	template<typename T>
-	void set_shader(const T* shader_) requires Inherited<Shader, T> {
+	void set_shader(const T& shader_) requires Inherited<Shader,typename std::remove_reference<T>::type> {
 		shader = std::make_unique<T>(shader_);
 	}
 
@@ -134,41 +135,103 @@ public:
 	}
 
 	void draw_triangle() {
+		std::vector<Vertex_shader_data> vertex_shade_output; vertex_shade(vertex_shade_output);
+		std::vector<Vertex_shader_data> clip_output; clip(clip_output, vertex_shade_output);
+		std::vector<Vertex_shader_data> perspective_division_output; perspective_division(perspective_division_output, clip_output);
+		std::vector<Vertex_shader_data> cull_output; cull(cull_output, perspective_division_output);
+		std::vector<Vertex_shader_data> screen_mapping_output; screen_mapping(screen_mapping_output, cull_output);
+		std::vector<Vertex_shader_data> rasterizing_output; rasterizing(rasterizing_output, screen_mapping_output);
+		std::vector<Fragment_shader_data> fragment_shade_output; fragment_shade(fragment_shade_output, rasterizing_output);
+		std::vector<Fragment_shader_data> blending_output; blending(blending_output, fragment_shade_output);
+		draw(blending_output);
+	}
+
+	void vertex_shade(std::vector<Vertex_shader_data>& output) {
+		output.clear();
 		auto& ebo = ebo_map[ebo_id];
 		auto indices = ebo.get_buffer_data(0, 3, 0, 3);
 
 		for (int i = 0; i < 3; i ++) {
 			int vertex_id = indices[i];
 
-			std::cout << "vertex: " << vertex_id << std::endl;
-
 			//position
 			auto [id0, stride0, offset0, item_size0] = vao_map[1];
 			auto position = vbo_map[id0].get_buffer_data(vertex_id, stride0, offset0, item_size0);
-
-			std::cout << "position: " << std::endl;
-			for (int k = 0; k < 3; k ++)
-				std::cout << position[k] << ' ';
-			std::cout << std::endl;
+			auto position_f = math::to_homo_point(math::Point3d{position.get(), 3});
 
 			//color
 			auto [id1, stride1, offset1, item_size1] = vao_map[2];
 			auto color = vbo_map[id1].get_buffer_data(vertex_id, stride1, offset1, item_size1);
-
-			std::cout << "color: " << std::endl;
-			for (int k = 0; k < 4; k ++)
-				std::cout << color[k] << ' ';
-			std::cout << std::endl;
-
+			auto color_f = math::Color_decimal(color.get(), 4);
+			
 			//uv
 			auto [id2, stride2, offset2, item_size2] = vao_map[3];
 			auto uv = vbo_map[id2].get_buffer_data(vertex_id, stride2, offset2, item_size2);
+			auto uv_f = math::UV(uv.get(), 2);
 
-			std::cout << "uv: " << std::endl;
-			for (int k = 0; k < 2; k ++)
-				std::cout << uv[k] << ' ';
-			std::cout << std::endl;
+			auto vs_output = shader.get()->vertex_shader({position_f, color_f, uv_f, 1.0});
+			output.push_back(std::move(vs_output));
+		}
+	}
+	
+	//TODO
+	void clip(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
+		output.clear();	
+		output = std::move(input);
+	}
 
+	void perspective_division(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
+		output.clear();
+		for (auto &data : input) {
+			data.position = math::normalize_homo_point(data.position);
+			data.color *= data.inv_w;
+			data.uv *= data.inv_w;
+		}
+		output = std::move(input);
+	}
+
+	//TODO
+	void cull(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
+		output.clear();
+		output = std::move(input);
+	}
+
+	void screen_mapping(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
+		output.clear();
+		for (auto &data : input) {
+			data.position = math::screen(width(), height()) * data.position;
+		}
+		output = std::move(input);
+	}
+
+	void rasterizing(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
+		output.clear();
+		for (int i = 0; i < input.size(); i += 3) {
+			std::vector<Vertex_shader_data> result;
+			Raster::triangle_shader_data(result, input[i], input[i + 1], input[i + 2]);
+			for (auto &data : result) {
+				output.push_back(data);
+			}
+		}
+	}
+
+	void fragment_shade(std::vector<Fragment_shader_data>& output, std::vector<Vertex_shader_data>& input) {
+		output.clear();
+		for (auto &data : input) {
+			output.push_back(shader.get()->fragment_shader(data));
+		}
+	}
+
+	//TODO
+	void blending(std::vector<Fragment_shader_data>& output, std::vector<Fragment_shader_data>& input) {
+		output.clear();
+		output = std::move(input);
+	}
+
+	//TODO
+	void draw(std::vector<Fragment_shader_data>& input) {
+		for (auto &data : input) {
+			set_pixel(data.pixel.x(), data.pixel.y(), data.color);
 		}
 	}
 

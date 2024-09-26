@@ -12,9 +12,22 @@ int width = 400;
 decimal angle = 0.0;
 decimal camera_z = 5.0;
 
-void render() {
-	angle += 1;
+math::Homo3d pos1 = math::homo_point(-1.5, 0.0, 0.0);
+math::Homo3d pos2 = math::homo_point(1.5, 0.0, 0.0);
+math::Homo3d pos3 = math::homo_point(0.0, 2.0, 0.0);
 
+math::Color color1 = math::Color::red();
+math::Color color2 = math::Color::green();
+math::Color color3 = math::Color::blue();
+
+auto model = math::rotate({0.0, 1.0, 0.0}, angle);
+auto view = math::view({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
+auto projection = math::projection_perspective(60.0, (decimal)width / height, -0.1, -100.0);
+auto screen = math::screen(width, height);
+
+std::vector<std::pair<math::Pixel, math::Color>> points;
+
+void test() {
 	decimal positions[] = {
 			-1.5, 0.0, 0.0,
 			1.5, 0.0, 0.0,
@@ -34,10 +47,6 @@ void render() {
 	};
 
 	int indices[] = { 0, 1, 2 };
-
-	auto model = math::rotate({0.0, 1.0, 0.0}, angle);
-	auto view = math::view({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
-	auto projection = math::projection_perspective(60.0, (decimal)width / height, -0.1, -100.0);
 
 	Default_Shader default_Shader(model, view, projection);
 	gpu->set_shader(default_Shader);
@@ -72,11 +81,13 @@ void render() {
 	gpu->bind(OBJECT::VERTEX_BUFFER, uv_vbo);
 	gpu->set_buffer(OBJECT::VERTEX_BUFFER, uvs, sizeof(uvs) / sizeof(decimal));
 
-	gpu->draw_triangle();
 
-	gpu->bind(OBJECT::VERTEX_BUFFER, 0);
-	gpu->bind(OBJECT::ELEMENT_BUFFER, 0);
-	gpu->bind(OBJECT::VERTEX_ARRAY, 0);
+//	gpu->bind(OBJECT::VERTEX_BUFFER, 0);
+//	gpu->bind(OBJECT::ELEMENT_BUFFER, 0);
+//	gpu->bind(OBJECT::VERTEX_ARRAY, 0);
+
+	gpu->draw_triangle();
+	// gpu->print_state();
 
 }
 
@@ -85,11 +96,15 @@ int main()
 	gpu->init(width, height);
 	app->init(width, height, app_id, gpu->color_buffer());
 
+	test();
+
 	while (app->active) {
 
 		gpu->clear();
 
-		render();
+		for (auto &[pixel, color] : points) {
+			gpu->set_pixel(pixel.x(), pixel.y(), color);
+		}
 
 		app->update();
 		auto message = app->get_message();

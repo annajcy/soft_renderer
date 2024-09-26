@@ -3,7 +3,7 @@
 #include "base.h"
 
 #define app Application::get_instance()
-#define DELTA_TIME 0
+#define DELTA_TIME 1
 
 enum MSG_TYPE {
     EXIT,

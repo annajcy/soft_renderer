@@ -20,6 +20,12 @@ namespace math {
 		explicit Vec<T, S>(int value) { this->data.fill(value); }
 		Vec<T, S>(const Vec<T, S>& vec) : data(vec.data) { }
 		Vec<T, S>(Vec<T, S>&& vec) noexcept : data(std::move(vec.data)) { }
+		
+		template<typename Q>
+		explicit Vec<T, S>(const Q* vec, int size) {
+			for (int i = 0; i < std::min(size, S); i++)
+				this->data[i] = vec[i];
+		}
 
 		template<typename Q>
 		explicit Vec<T, S>(const std::vector<Q>& vec) {
@@ -211,7 +217,6 @@ namespace math {
 		friend std::ostream& operator<<(std::ostream& os, const Vec<T, S>& vec) requires Floating_point<T> {
 			for (int i = 0; i < S; i++)
 				os << (!sign(vec.data[i]) ? (decimal)0 : vec.data[i]) << ' ';
-			os << std::endl;
 			return os;
 		}
 

@@ -63,8 +63,8 @@ namespace math {
 		Point2d a, b, c;
 
 		Triangle2d() = default;
-		Triangle2d(Point2d a_, Point2d b_, Point2d c_) : a(std::move(a_)), b(std::move(b_)), c(std::move(c_)) {}
-		Triangle2d(const Pixel& a_, const Pixel& b_, const Pixel& c_) : a(pixel_to_point2d(a_)), b(pixel_to_point2d(b_)), c(pixel_to_point2d(c_)) {}
+		Triangle2d(const Point2d& a_, const Point2d& b_, const Point2d& c_) : a(a_), b(b_), c(c_) {}
+		Triangle2d(Point2d&& a_, Point2d&& b_, Point2d&& c_) : a(std::move(a_)), b(std::move(b_)), c(std::move(c_)) {}
 
 		[[nodiscard]] decimal area() const {
 			Vector2d ab = b - a, ac = c - a;

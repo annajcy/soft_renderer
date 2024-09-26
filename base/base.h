@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <bits/stdc++.h>
 
-using decimal = float;
+using decimal = double;
 using varied_type = std::variant<float, double, long double, int, long long, char>;
 
 inline decimal PI() { return acos(-1); }

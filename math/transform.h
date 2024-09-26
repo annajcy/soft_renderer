@@ -125,13 +125,12 @@ namespace math {
 		auto up = cross(right, front).normalize();
 		auto ret = (translate(position.x(), position.y(), position.z()) * rotate(right, up, -front)).inv();
 		return ret;
-
 	}
 
 	//far represent the abs value of the coordination of the fear plane
 	inline Transform3d projection_orthogonal(decimal near, decimal far, decimal top, decimal bottom, decimal left, decimal right) {
-		return translate(-(right + left) * 0.5, -(top + bottom) * 0.5, -(far + near) * 0.5) *
-				scale(2.0 / (right - left), 2.0 / (top - bottom), 2.0 / (near - far)) ;
+		return scale(2.0 / (right - left), 2.0 / (top - bottom), 2.0 / (near - far)) * 
+				translate(-(right + left) * 0.5, -(top + bottom) * 0.5, -(far + near) * 0.5);
 	}
 
 	//transform into clip space
