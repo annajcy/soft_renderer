@@ -29,6 +29,9 @@ concept Less_than = (N <= Max);
 template<typename T, T P, T Q>
 concept Equal = (P == Q);
 
+template<typename Base, typename Derived>
+concept Inherited = std::is_base_of_v<Base, Derived>;
+
 constexpr double eps = 1e-8;
 
 inline bool equal(const decimal& a, const decimal& b) {

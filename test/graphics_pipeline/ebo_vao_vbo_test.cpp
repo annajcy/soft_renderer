@@ -80,7 +80,9 @@ void test() {
 //	gpu->bind(OBJECT::VERTEX_ARRAY, 0);
 
 	gpu->draw_triangle();
+
 	gpu->print_state();
+
 
 }
 
