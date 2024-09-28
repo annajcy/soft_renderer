@@ -15,7 +15,7 @@ template<typename T>
 class Buffer_object {
 private:
 	std::unique_ptr<T[]> data{ nullptr };
-	int size_buffer{ 0 }, size_data{ 0 };
+	
 
 public:
 	Buffer_object() = default;
@@ -25,6 +25,8 @@ public:
 			data(std::move(buffer_object.data)),
 			size_buffer(buffer_object.size_buffer),
 			size_data(buffer_object.size_data) {}
+
+	int size_buffer{ 0 }, size_data{ 0 };
 
 	std::unique_ptr<T[]> get_buffer_data(int index, int stride, int offset, int item_size) {
 		int pointer = index * stride + offset;

@@ -15,16 +15,16 @@ class Application
 private:
     static Application* instance;
 
-public:
-    cv::String app_id{ "app" };
     cv::Mat canvas{ };
 	std::shared_ptr<u_int8_t[]> canvas_buffer{ nullptr };
 	int width{ 0 };
     int height{ 0 };
-    bool active{ false };
 
     Application() = default;
-    ~Application() = default;
+
+public:
+    cv::String app_id{ "app" };
+    bool active{ false };
 
 	void init(int width_, int height_, const std::string &app_id_ , const std::shared_ptr<u_int8_t[]>& frame_buffer) {
 		if (!frame_buffer) throw std::invalid_argument("invalid frame buffer");

@@ -16,11 +16,11 @@ public:
 	Frame_buffer(int width_, int height_) : width(width_), height(height_) {
 		color_buffer = std::shared_ptr<math::BGR[]>(new math::BGR[width_ * height_]);
 		depth_buffer = std::shared_ptr<decimal[]>(new decimal[width_ * height_]);
-		std::fill_n(depth_buffer.get(), width_ * height_, 1.0);
+		std::fill_n(depth_buffer.get(), width_ * height_, -2.0);
 	}
 
 	void clear() {
-		std::fill_n(depth_buffer.get(), width * height, 1.0);
+		std::fill_n(depth_buffer.get(), width * height, -2.0);
 		memset(color_buffer.get(), 0, width * height * sizeof(math::BGR));
 	}
 

@@ -39,15 +39,15 @@ namespace math {
 		return a * alpha + b * beta + c * gamma;
 	}
 
-	template<typename T, int S>
-	inline Vec<T, S> calculate_weighed(const Vec<T, S>& a, const Vec<T, S>& b, const Vec<T, S>& c, const std::tuple<decimal, decimal, decimal>& barycentric) {
-		Vec<T, S> result;
-		auto &[alpha, beta, gamma] = barycentric;
-		for (int i = 0; i < S; i ++) {
-			result[i] = a[i] * alpha + b[i] * beta + c[i] * gamma;
-		}
-		return result;
-	}
+	// template<typename T, int S>
+	// inline Vec<T, S> calculate_weighed(const Vec<T, S>& a, const Vec<T, S>& b, const Vec<T, S>& c, const std::tuple<decimal, decimal, decimal>& barycentric) {
+	// 	Vec<T, S> result;
+	// 	auto &[alpha, beta, gamma] = barycentric;
+	// 	for (int i = 0; i < S; i ++) {
+	// 		result[i] = a[i] * alpha + b[i] * beta + c[i] * gamma;
+	// 	}
+	// 	return result;
+	// }
 
 	template<typename S>
 	inline S interpolate(const std::pair<Point2d, S>& a,const std::pair<Point2d, S>& b, const std::pair<Point2d, S>& c, const Point2d& p) {

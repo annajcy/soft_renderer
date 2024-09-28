@@ -6,38 +6,47 @@
 #include "color.h"
 
 std::string app_id = "soft_renderer";
-int height = 300;
-int width = 400;
+int height = 600;
+int width = 800;
 
 decimal angle = 0.0;
 decimal camera_z = 5.0;
 
 void render() {
-	angle += 1;
+	angle += 0.1;
 
 	decimal positions[] = {
 			-1.5, 0.0, 0.0,
 			1.5, 0.0, 0.0,
-			0.0, 2.0, 0.0,
+			0.0, 5.0, 0.0,
+			-0.5, 0.0, -0.5,
+			0.5, 0.0, -0.5,
+			0.0, 1.0, -0.5,
 	};
 
 	decimal colors[] = {
 			1.0, 0.0, 0.0, 1.0,
 			0.0, 1.0, 0.0, 1.0,
 			0.0, 0.0, 1.0, 1.0,
+			0.0, 0.0, 1.0, 0.5,
+			1.0, 0.0, 0.0, 0.5,
+			0.0, 1.0, 0.0, 0.5,
 	};
 
 	decimal uvs[] = {
 			0.0, 0.0,
 			0.0, 1.0,
 			1.0, 0.0,
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 0.0,
 	};
 
-	int indices[] = { 0, 1, 2 };
+	int indices[] = { 0, 1, 2, 3, 4, 5 };
 
 	auto model = math::rotate({0.0, 1.0, 0.0}, angle);
 	auto view = math::view({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
-	auto projection = math::projection_perspective(60.0, (decimal)width / height, -0.1, -100.0);
+	auto projection = math::projection_perspective(70.0, (decimal)width / height, -0.5, -1000.0);
 
 	Default_Shader default_Shader(model, view, projection);
 	gpu->set_shader(default_Shader);
@@ -46,18 +55,16 @@ void render() {
 	gpu->bind(OBJECT::ELEMENT_BUFFER, ebo);
 	gpu->set_buffer(OBJECT::ELEMENT_BUFFER, indices, sizeof(indices) / sizeof(int));
 
-	int vao;
-
-	vao = gpu->generate(OBJECT::VERTEX_ARRAY);
-	gpu->bind(OBJECT::VERTEX_ARRAY, vao);
+	int vertex_vao = gpu->generate(OBJECT::VERTEX_ARRAY);
+	gpu->bind(OBJECT::VERTEX_ARRAY, vertex_vao);
 	gpu->set_vertex_array({1, 3, 0, 3});
 
-	vao = gpu->generate(OBJECT::VERTEX_ARRAY);
-	gpu->bind(OBJECT::VERTEX_ARRAY, vao);
+	int color_vao = gpu->generate(OBJECT::VERTEX_ARRAY);
+	gpu->bind(OBJECT::VERTEX_ARRAY, color_vao);
 	gpu->set_vertex_array({2, 4, 0, 4});
 
-	vao = gpu->generate(OBJECT::VERTEX_ARRAY);
-	gpu->bind(OBJECT::VERTEX_ARRAY, vao);
+	int uv_vao = gpu->generate(OBJECT::VERTEX_ARRAY);
+	gpu->bind(OBJECT::VERTEX_ARRAY, uv_vao);
 	gpu->set_vertex_array({3, 2, 0, 2});
 
 	int position_vbo = gpu->generate(OBJECT::VERTEX_BUFFER);
@@ -72,7 +79,7 @@ void render() {
 	gpu->bind(OBJECT::VERTEX_BUFFER, uv_vbo);
 	gpu->set_buffer(OBJECT::VERTEX_BUFFER, uvs, sizeof(uvs) / sizeof(decimal));
 
-	gpu->draw_triangle();
+	gpu->draw_primitive(PRIMITIVE::TRIANGLE);
 
 	gpu->bind(OBJECT::VERTEX_BUFFER, 0);
 	gpu->bind(OBJECT::ELEMENT_BUFFER, 0);
