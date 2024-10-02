@@ -33,9 +33,9 @@ namespace math {
 		decimal startup = stride / 2;
 
 		decimal x = startup + pixel.x();
-		for (int i = 0; i < scale; i ++, x += stride) {
+		for (int i = 0; i < scale; x += stride, i ++) {
 			decimal y = startup + pixel.y();
-			for (int j = 0; j < scale; j ++, y += stride) {
+			for (int j = 0; j < scale; y += stride, j ++) {
 				result.push_back({x, y});
 			}
 		}

@@ -141,7 +141,6 @@ private:
 			auto ab = cast_dims<2>(input[i + 1].position) - cast_dims<2>(input[i].position);
 			auto bc = cast_dims<2>(input[i + 2].position) - cast_dims<2>(input[i + 1].position);
 
-
 			if (cull_type == CULL_TYPE::BACK) {
 				if (sign(cross(ab, bc)) == -1) continue;
 			} else if (cull_type == CULL_TYPE::FRONT) {
@@ -195,7 +194,7 @@ private:
 		output.clear();
 		for (int i = 0; i < input.size(); i += 3) {
 			std::vector<Vertex_shader_data> result;
-			Raster::triangle_shader_data(result, input[i], input[i + 1], input[i + 2]);
+			Raster::triangle_shader_data(result, input[i], input[i + 1], input[i + 2], MSAA);
 			for (auto &data : result) {
 				output.push_back(data);
 			}
@@ -209,19 +208,13 @@ private:
 		}
 	}
 
-	//TODO
-	void blending(std::vector<Fragment_shader_data>& output, std::vector<Fragment_shader_data>& input) {
-		output.clear();
-		output = std::move(input);
-	}
-
 	void draw(std::vector<Fragment_shader_data>& input) {
 		for (auto &data : input) {
 			auto x = data.pixel.x(), y = data.pixel.y();
 			auto depth = data.depth;
 			if (depth_test_enabled) {
-				if (data.depth >= frame_buffer.get()->depth_at(x, y)) {
-					frame_buffer.get()->depth_at(x, y) = data.depth;
+				if (depth >= frame_buffer.get()->depth_at(x, y)) {
+					if (depth_update_enabled) frame_buffer.get()->depth_at(x, y) = depth;
 					set_pixel(x, y, data.color, blend_enabled);
 				}
 			} else {
@@ -242,20 +235,19 @@ private:
 		std::vector<Vertex_shader_data> screen_mapping_output; screen_mapping(screen_mapping_output, perspective_division_output);
 		std::vector<Vertex_shader_data> rasterizing_output; rasterizing(rasterizing_output, screen_mapping_output);
 		std::vector<Fragment_shader_data> fragment_shade_output; fragment_shade(fragment_shade_output, rasterizing_output);
-		std::vector<Fragment_shader_data> blending_output; blending(blending_output, fragment_shade_output);
-		draw(blending_output);
+		draw(fragment_shade_output);
 	}
 
 public:
 
-	//vertices arranged clockwise respresent front face
+	//vertices arranged clockwise represent front face
 	CULL_TYPE cull_type = CULL_TYPE::DISABLE;
 	PRIMITIVE primitive_type = PRIMITIVE::TRIANGLE;
 
+	int MSAA = 1;
 	bool blend_enabled = true;
 	bool depth_test_enabled = true;
-
-    
+	bool depth_update_enabled = true;
 
     static GPU* get_instance() {
         if (instance == nullptr) {

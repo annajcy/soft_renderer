@@ -7,6 +7,7 @@ struct Vertex_shader_data {
 	math::Homo3d position{};
 	math::Color_decimal color{};
 	math::UV uv{};
+	//math::Vector3d normal{};
 	decimal inv_w{ 1.0 };
 };
 

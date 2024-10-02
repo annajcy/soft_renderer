@@ -4,10 +4,11 @@
 #include "maths.h"
 #include "base.h"
 #include "color.h"
+#include "camera.h"
 
 std::string app_id = "soft_renderer";
-int height = 600;
-int width = 800;
+int height = 300;
+int width = 400;
 
 decimal angle = 0.0;
 decimal camera_z = 5.0;
@@ -45,8 +46,10 @@ void render() {
 	int indices[] = { 0, 1, 2, 3, 4, 5 };
 
 	auto model = math::rotate({0.0, 1.0, 0.0}, angle);
-	auto view = math::view({0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
-	auto projection = math::projection_perspective(70.0, (decimal)width / height, -0.5, -1000.0);
+
+	Camera camera(70.0, (decimal)width / height, -0.5, -1000.0, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
+	auto view = camera.get_view_matrix();
+	auto projection = camera.get_projection_matrix();
 
 	Default_Shader default_Shader(model, view, projection);
 	gpu->set_shader(default_Shader);
@@ -93,14 +96,12 @@ int main()
 	app->init(width, height, app_id, gpu->color_buffer());
 
 	while (app->active) {
-
 		gpu->clear();
 
 		render();
 
 		app->update();
-		auto message = app->get_message();
-		app->handle_message(message);
+		app->handle_message();
 	}
 
 	app->exit();

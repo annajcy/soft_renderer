@@ -1,14 +1,10 @@
 #pragma once
 
 #include "base.h"
+#include "../framework/event_center.h"
 
 #define app Application::get_instance()
 #define DELTA_TIME 1
-
-enum MSG_TYPE {
-    EXIT,
-    OTHER,
-};
 
 class Application
 {
@@ -20,7 +16,31 @@ private:
 	int width{ 0 };
     int height{ 0 };
 
+	static decimal mouse_sensitivity;
+	static int mouse_current_x;
+	static int mouse_current_y;
+
     Application() = default;
+
+	static void mouse_callback(int event, int x, int y, int flags, void* userdata) {
+		if (event == cv::EVENT_MOUSEMOVE) {
+			Event_center<void, std::pair<int, int>, std::pair<decimal, decimal>>::get_instance()->
+			trigger_event("on_mouse_move", {x, y},{(x - mouse_current_x) * mouse_sensitivity, (y - mouse_current_y) * mouse_sensitivity});
+			mouse_current_x = x, mouse_current_y = y;
+		} else if (event == cv::EVENT_LBUTTONDOWN) {
+			Event_center<void, std::pair<int, int>, std::pair<decimal, decimal>>::get_instance()->
+			trigger_event("on_mouse_left_button_down", {x, y},{(x - mouse_current_x) * mouse_sensitivity, (y - mouse_current_y) * mouse_sensitivity});
+			mouse_current_x = x, mouse_current_y = y;
+		} else if (event == cv::EVENT_LBUTTONUP) {
+			Event_center<void, std::pair<int, int>, std::pair<decimal, decimal>>::get_instance()->
+			trigger_event("on_mouse_left_button_up", {x, y},{(x - mouse_current_x) * mouse_sensitivity, (y - mouse_current_y) * mouse_sensitivity});
+			mouse_current_x = x, mouse_current_y = y;
+		}
+	}
+
+	void register_events() {
+		Event_center<void>::get_instance()->register_event("quit", [&](){ active = false; });
+	}
 
 public:
     cv::String app_id{ "app" };
@@ -33,6 +53,8 @@ public:
 		canvas = cv::Mat(height, width, CV_8UC3, canvas_buffer.get());
 		cv::namedWindow(app_id, cv::WINDOW_NORMAL);
 		cv::resizeWindow(app_id, width, height);
+		cv::setMouseCallback(app_id, mouse_callback, nullptr);
+		register_events();
 	}
 
     static Application* get_instance() {
@@ -42,19 +64,20 @@ public:
         return instance;
     }
 
-    static MSG_TYPE get_message() {
-        if (cv::waitKey(DELTA_TIME) == 'q') {
-            return EXIT;
-        } else {
-            return OTHER;
-        }
-    }
-
-    void handle_message(MSG_TYPE message) {
-        if (message == EXIT) {
-            active = false;
-        }
-    }
+	void handle_message() {
+		auto key = cv::waitKey(DELTA_TIME);
+        if (key == 'q') {
+            Event_center<void>::get_instance()->trigger_event("quit");
+        } else if (key == 'w') {
+	        Event_center<void>::get_instance()->trigger_event("key_w_down");
+        } else if (key== 'a') 	{
+	        Event_center<void>::get_instance()->trigger_event("key_a_down");
+		} else if (key == 's') {
+	        Event_center<void>::get_instance()->trigger_event("key_s_down");
+		} else if (key == 'd') {
+	        Event_center<void>::get_instance()->trigger_event("key_d_down");
+		}
+	}
 
     void update() const {
         cv::imshow(app_id, canvas);
