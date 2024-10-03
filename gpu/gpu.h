@@ -6,6 +6,7 @@
 #include "buffer_object.h"
 #include "shader.h"
 #include "raster.h"
+#include "camera.h"
 
 #define gpu GPU::get_instance()
 
@@ -97,7 +98,7 @@ private:
 		};
 
 		auto inside = [&](const math::Vector4d& normal, const math::Homo3d& point) -> bool {
-			return sign(normal.dot(point)) == 1;
+			return sign(normal.dot(point)) >= 0;
 		};
 
 		auto clipper = [&](
@@ -160,7 +161,8 @@ private:
 			}
 
 			std::sort(result.begin(), result.end(), [&](const Vertex_shader_data& u, const Vertex_shader_data& v){
-				if (u.position.x() == v.position.x()) return u.position.y() < u.position.y();
+				if (sign(u.position.x() - v.position.x()) == 0) 
+					return u.position.y() > v.position.y();
 				return u.position.x() < v.position.x();
 			});
 

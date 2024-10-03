@@ -10,7 +10,7 @@ private:
 	std::unordered_map<std::string, std::function<T(Args...)>> events;
 public:
 	static Event_center* get_instance() {
-		if (!instance) {
+		if (instance == nullptr) {
 			instance = new Event_center();
 		}
 		return instance;

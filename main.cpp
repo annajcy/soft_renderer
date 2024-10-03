@@ -13,41 +13,32 @@ int width = 400;
 decimal angle = 0.0;
 decimal camera_z = 5.0;
 
-void render() {
-	angle += 0.1;
+Camera camera(70.0, (decimal)width / height, -0.5, -1000.0, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
 
-	decimal positions[] = {
+decimal positions[] = {
 			-1.5, 0.0, 0.0,
 			1.5, 0.0, 0.0,
 			0.0, 5.0, 0.0,
-			-0.5, 0.0, -0.5,
-			0.5, 0.0, -0.5,
-			0.0, 1.0, -0.5,
 	};
 
 	decimal colors[] = {
 			1.0, 0.0, 0.0, 1.0,
 			0.0, 1.0, 0.0, 1.0,
 			0.0, 0.0, 1.0, 1.0,
-			0.0, 0.0, 1.0, 0.5,
-			1.0, 0.0, 0.0, 0.5,
-			0.0, 1.0, 0.0, 0.5,
 	};
 
 	decimal uvs[] = {
 			0.0, 0.0,
 			0.0, 1.0,
 			1.0, 0.0,
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 0.0,
 	};
 
-	int indices[] = { 0, 1, 2, 3, 4, 5 };
+	int indices[] = { 0, 1, 2 };
+
+void render() {
+	angle += 0.1;
 
 	auto model = math::rotate({0.0, 1.0, 0.0}, angle);
-
-	Camera camera(70.0, (decimal)width / height, -0.5, -1000.0, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
 	auto view = camera.get_view_matrix();
 	auto projection = camera.get_projection_matrix();
 

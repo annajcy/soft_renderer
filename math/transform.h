@@ -36,7 +36,7 @@ namespace math {
 		}; 
 	}
 
-	inline Transform3d rotate_xy(decimal theta) { 
+	inline Transform3d rotate_z(decimal theta) { 
 		decimal sin_theta = std::sin(deg_to_rad(theta));
 		decimal cos_theta = std::cos(deg_to_rad(theta));
 		return Transform3d{
@@ -47,7 +47,7 @@ namespace math {
 		}; 
 	}
 
-	inline Transform3d rotate_yz(decimal theta) { 
+	inline Transform3d rotate_x(decimal theta) { 
 		decimal sin_theta = std::sin(deg_to_rad(theta));
 		decimal cos_theta = std::cos(deg_to_rad(theta));
 		return Transform3d{
@@ -58,7 +58,7 @@ namespace math {
 		}; 
 	}
 
-	inline Transform3d rotate_zx(decimal theta) { 
+	inline Transform3d rotate_y(decimal theta) { 
 		decimal sin_theta = std::sin(deg_to_rad(theta));
 		decimal cos_theta = std::cos(deg_to_rad(theta));
 		return Transform3d{

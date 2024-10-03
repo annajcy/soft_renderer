@@ -76,6 +76,10 @@ public:
 	        Event_center<void>::get_instance()->trigger_event("key_s_down");
 		} else if (key == 'd') {
 	        Event_center<void>::get_instance()->trigger_event("key_d_down");
+		} else if (key == 'z') {
+			Event_center<void>::get_instance()->trigger_event("key_z_down");
+		} else if (key == 'x') {
+			Event_center<void>::get_instance()->trigger_event("key_x_down");
 		}
 	}
 
