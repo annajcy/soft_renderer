@@ -111,8 +111,8 @@ private:
 			if (inside(normal, u.position) && inside(normal, v.position)) {
 				out.push_back(v);
 			} else if (!inside(normal, u.position) && inside(normal, v.position)) {
+				out.push_back(get_intersect(u, v, normal)); //it must be pushed in prior to v
 				out.push_back(v);
-				out.push_back(get_intersect(u, v, normal));
 			} else if (inside(normal, u.position) && !inside(normal, v.position)) {
 				out.push_back(get_intersect(u, v, normal));
 			}
@@ -159,12 +159,6 @@ private:
 					clipper(result, u, v, normal);
 				}
 			}
-
-			std::sort(result.begin(), result.end(), [&](const Vertex_shader_data& u, const Vertex_shader_data& v){
-				if (sign(u.position.x() - v.position.x()) == 0) 
-					return u.position.y() > v.position.y();
-				return u.position.x() < v.position.x();
-			});
 
 			for (int j = 1; j + 1 < result.size(); j ++ ) {
 				output.push_back(result[0]);
@@ -327,7 +321,7 @@ public:
 	}
 
 	template<typename T>
-	void set_shader(const T& shader_) requires Inherited<Shader,typename std::remove_reference<T>::type> {
+	void set_shader(const T& shader_) requires Inherited<Shader, typename std::remove_reference<T>::type> {
 		shader = std::make_unique<T>(shader_);
 	}
 

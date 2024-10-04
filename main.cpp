@@ -16,35 +16,27 @@ decimal camera_z = 5.0;
 Camera camera(70.0, (decimal)width / height, -0.5, -1000.0, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, -camera_z});
 
 decimal positions[] = {
-			-1.5, 0.0, 0.0,
-			1.5, 0.0, 0.0,
-			0.0, 5.0, 0.0,
-	};
+	-10.0, 0.0, 0.0,
+	10.0, 0.0, 0.0,
+	0.0, 5.0, 0.0,
+};
 
-	decimal colors[] = {
-			1.0, 0.0, 0.0, 1.0,
-			0.0, 1.0, 0.0, 1.0,
-			0.0, 0.0, 1.0, 1.0,
-	};
+decimal colors[] = {
+	1.0, 0.0, 0.0, 1.0,
+	0.0, 1.0, 0.0, 1.0,
+	0.0, 0.0, 1.0, 1.0,
+};
 
-	decimal uvs[] = {
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 0.0,
-	};
+decimal uvs[] = {
+	0.0, 0.0,
+	0.0, 1.0,
+	1.0, 0.0,
+};
 
-	int indices[] = { 0, 1, 2 };
+int indices[] = { 0, 1, 2 };
 
-void render() {
-	angle += 0.1;
-
-	auto model = math::rotate({0.0, 1.0, 0.0}, angle);
-	auto view = camera.get_view_matrix();
-	auto projection = camera.get_projection_matrix();
-
-	Default_Shader default_Shader(model, view, projection);
-	gpu->set_shader(default_Shader);
-
+void load() {
+	
 	int ebo = gpu->generate(OBJECT::ELEMENT_BUFFER);
 	gpu->bind(OBJECT::ELEMENT_BUFFER, ebo);
 	gpu->set_buffer(OBJECT::ELEMENT_BUFFER, indices, sizeof(indices) / sizeof(int));
@@ -72,19 +64,27 @@ void render() {
 	int uv_vbo = gpu->generate(OBJECT::VERTEX_BUFFER);
 	gpu->bind(OBJECT::VERTEX_BUFFER, uv_vbo);
 	gpu->set_buffer(OBJECT::VERTEX_BUFFER, uvs, sizeof(uvs) / sizeof(decimal));
+}
+
+void render() {
+	angle += 0.1;
+
+	auto model = math::rotate({0.0, 1.0, 0.0}, angle);
+	auto view = camera.get_view_matrix();
+	auto projection = camera.get_projection_matrix();
+
+	Default_Shader default_Shader(model, view, projection);
+	gpu->set_shader(default_Shader);
 
 	gpu->draw_primitive(PRIMITIVE::TRIANGLE);
-
-	gpu->bind(OBJECT::VERTEX_BUFFER, 0);
-	gpu->bind(OBJECT::ELEMENT_BUFFER, 0);
-	gpu->bind(OBJECT::VERTEX_ARRAY, 0);
-
 }
 
 int main()
 {
 	gpu->init(width, height);
 	app->init(width, height, app_id, gpu->color_buffer());
+
+	load();
 
 	while (app->active) {
 		gpu->clear();
