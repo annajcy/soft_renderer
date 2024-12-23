@@ -53,10 +53,8 @@ namespace math {
 		auto to_bottom = point.y() - bottom;
 		auto to_top = top - point.y();
 		int x, y;
-		if (to_left > to_right) x = right;
-		else x = left;
-		if (to_bottom > to_top) y = top;
-		else y = bottom;
+		x = to_left > to_right ? right : left;
+		y = to_bottom > to_top ? top : bottom;
 		return Pixel({x, y});
 	}
 

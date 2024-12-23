@@ -15,7 +15,6 @@ template<typename T>
 class Buffer_object {
 private:
 	std::unique_ptr<T[]> data{ nullptr };
-	
 
 public:
 	Buffer_object() = default;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "base.h"
 #include "maths.h"
 #include "event_center.h"
@@ -107,8 +109,8 @@ public:
 	CAMERA_MODE mode = CAMERA_MODE::TRANSLATE;
 
 	Camera() = default;
-	Camera(decimal fov_, decimal aspect_ratio_, decimal near_, decimal far_, const math::Point3d& front_, const math::Point3d& top_, const math::Point3d& position_) :
-	fov(fov_), aspect_ratio(aspect_ratio_), near(near_), far(far_), origin_front(front_), top(top_), origin_position(position_) {
+	Camera(decimal fov_, decimal aspect_ratio_, decimal near_, decimal far_, math::Point3d  front_, math::Point3d  top_, math::Point3d  position_) :
+	fov(fov_), aspect_ratio(aspect_ratio_), near(near_), far(far_), origin_front(std::move(front_)), top(std::move(top_)), origin_position(std::move(position_)) {
 		register_events();
 	}
 
@@ -122,27 +124,27 @@ public:
 		delta_z += distance * direction.z();
 	}
 
-	math::Vector3d front() {
+	[[nodiscard]] math::Vector3d front() const {
 		return math::Vector3d{ math::rotate_y(yaw) * math::rotate_x(pitch) * math::to_homo_vector(origin_front) }.normalize();
 	}
 
-	math::Vector3d back() {
+	[[nodiscard]] math::Vector3d back() const {
 		return -front();
 	}
 
-	math::Vector3d right() {
+	[[nodiscard]] math::Vector3d right() const {
 		return math::cross(front(), top).normalize();
 	}
 
-	math::Vector3d left() {
+	[[nodiscard]] math::Vector3d left() const {
 		return -right();
 	}
 
-	math::Vector3d up() {
+	[[nodiscard]] math::Vector3d up() const {
 		return math::cross(right(), front()).normalize();
 	}
 
-	math::Vector3d down() {
+	[[nodiscard]] math::Vector3d down() const {
 		return -up();
 	}
 
@@ -154,7 +156,7 @@ public:
 		return math::view(front(), top, position());
 	}
 
-	math::Transform3d get_projection_matrix() {
+	[[nodiscard]] math::Transform3d get_projection_matrix() const {
 		return math::projection_perspective(fov, aspect_ratio, near, far);
 	}
 

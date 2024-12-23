@@ -16,6 +16,7 @@ struct Fragment_shader_data {
 	decimal depth{ 0.0 };
 	math::Color color{};
 	math::UV uv{};
+	//math::Vector3d normal{};
 };
 
 class Shader {
@@ -50,7 +51,8 @@ public:
 		auto clip = projection * view * model * input.position;
 		return { clip,
 				 input.color,
-				 input.uv, 
+				 input.uv,
+				 //input.normal,
 				 1.0 / clip.w()};
 	}
 
@@ -58,6 +60,8 @@ public:
 		return { cast<int, 2>(input.position),
 		         input.position.z(),
 				 math::Color(input.color),
-				 input.uv};
+				 input.uv,
+				 //input.normal
+		};
 	}
 };

@@ -135,7 +135,7 @@ namespace math {
 
 	//transform into clip space
 	inline Transform3d projection_perspective(decimal fov, decimal aspect_ratio, decimal near, decimal far) {
-		auto half_fov = deg_to_rad(fov / 2.0);
+		auto half_fov = deg_to_rad(fov * 0.5);
 		auto top = tan(half_fov) * -near, bottom = -top;
 		auto right = aspect_ratio * top, left = -right;
 

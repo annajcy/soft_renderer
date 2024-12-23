@@ -19,7 +19,7 @@ public:
 		std::fill_n(depth_buffer.get(), width_ * height_, -2.0);
 	}
 
-	void clear() {
+	void clear() const {
 		std::fill_n(depth_buffer.get(), width * height, -2.0);
 		memset(color_buffer.get(), 0, width * height * sizeof(math::BGR));
 	}

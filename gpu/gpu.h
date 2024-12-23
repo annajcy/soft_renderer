@@ -73,7 +73,7 @@ private:
 			auto uv = vbo_map[id2].get_buffer_data(vertex_id, stride2, offset2, item_size2);
 			auto uv_f = math::UV(uv.get(), 2);
 
-			auto vs_output = shader.get()->vertex_shader({position_f, color_f, uv_f, 1.0});
+			auto vs_output = shader->vertex_shader({position_f, color_f, uv_f, 1.0});
 			output.push_back(std::move(vs_output));
 		}
 	}
@@ -174,6 +174,7 @@ private:
 			data.position = math::normalize_homo_point(data.position);
 			data.color *= data.inv_w;
 			data.uv *= data.inv_w;
+			//data.normal *= data.inv_w;
 		}
 		output = std::move(input);
 	}
@@ -200,17 +201,17 @@ private:
 	void fragment_shade(std::vector<Fragment_shader_data>& output, std::vector<Vertex_shader_data>& input) {
 		output.clear();
 		for (auto &data : input) {
-			output.push_back(shader.get()->fragment_shader(data));
+			output.push_back(shader->fragment_shader(data));
 		}
 	}
 
 	void draw(std::vector<Fragment_shader_data>& input) {
 		for (auto &data : input) {
-			auto x = data.pixel.x(), y = data.pixel.y();
+			Arithmetic auto x = data.pixel.x(), y = data.pixel.y();
 			auto depth = data.depth;
 			if (depth_test_enabled) {
-				if (depth >= frame_buffer.get()->depth_at(x, y)) {
-					if (depth_update_enabled) frame_buffer.get()->depth_at(x, y) = depth;
+				if (depth >= frame_buffer->depth_at(x, y)) {
+					if (depth_update_enabled) frame_buffer->depth_at(x, y) = depth;
 					set_pixel(x, y, data.color, blend_enabled);
 				}
 			} else {
