@@ -1,3 +1,8 @@
 #include "gpu.h"
 
-GPU* GPU::instance = nullptr;
+namespace gpu {
+
+	GPU* GPU::instance = nullptr;
+
+}
+

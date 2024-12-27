@@ -11,6 +11,8 @@ include_directories( math )
 include_directories( application )
 include_directories( gpu )
 include_directories( framework )
+include_directories( rendering )
+include_directories( model )
 
 file(GLOB copy_resources "assets")
 file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})

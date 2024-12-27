@@ -58,12 +58,29 @@ namespace math {
 		return Pixel({x, y});
 	}
 
+	struct Triangle3d {
+		Point3d a, b, c;
+
+		Triangle3d() = default;
+		Triangle3d(const Point3d& a_, const Point3d& b_, const Point3d&c_) : a(a_), b(b_), c(c_) {}
+
+		[[nodiscard]] decimal area() const {
+			Vector3d ab = b - a, ac = c - a;
+			return std::fabs(cross(ab, ac).norm()) / 2;
+		}
+
+		[[nodiscard]] Vector3d normal() const {
+			Vector3d ab = b - a, ac = c - a;
+			return cross(ab, ac).normalize();
+		}
+
+	};
+
 	struct Triangle2d {
 		Point2d a, b, c;
 
 		Triangle2d() = default;
 		Triangle2d(const Point2d& a_, const Point2d& b_, const Point2d& c_) : a(a_), b(b_), c(c_) {}
-		Triangle2d(Point2d&& a_, Point2d&& b_, Point2d&& c_) : a(std::move(a_)), b(std::move(b_)), c(std::move(c_)) {}
 
 		[[nodiscard]] decimal area() const {
 			Vector2d ab = b - a, ac = c - a;
@@ -91,7 +108,6 @@ namespace math {
 		Point2d a, b;
 
 		Line2d() = default;
-		Line2d(Point2d  a_, Point2d  b_) : a(std::move(a_)), b(std::move(b_)) {}
 		Line2d(const Pixel& a_, const Pixel& b_) : a(pixel_to_point2d(a_)), b(pixel_to_point2d(b_)) {}
 
 		[[nodiscard]] Vector2d direction() const { return b - a; }
@@ -103,6 +119,24 @@ namespace math {
 			Vector2d pa = p - a, pb = p - b;
 			return sign(cross(pa, pb));
 		}
+	};
+
+	struct Ray {
+		math::Point3d origin{};
+		math::Vector3d direction{};
+
+		Ray() = default;
+		Ray(const math::Point3d &origin_, const math::Point3d &direction_) : origin(origin_), direction(direction_) { }
+
+		[[nodiscard]] math::Point3d evaluate(decimal t) const {
+			return origin + direction * t;
+		}
+
+	};
+
+	struct RayHit {
+		math::Point3d hit_point{};
+
 	};
 
 }
