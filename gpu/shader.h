@@ -163,10 +163,9 @@ namespace gpu {
 			output.depth = abs(input.depth);
 
 			auto main_texture_val = to_vector(textures->get_texture("main")->at_uv_bilinear(input.uv.x(), input.uv.y()).to_color_decimal());
-			auto height_texture_val = to_vector(textures->get_texture("height")->at_uv_bilinear(input.uv.x(), input.uv.y()).to_color_decimal());
 
 			decimal ka = 0.005, kd = 1.0, ks = 0.7937;
-			int kp = 150;
+			int kp = 100;
 			
 			math::Vector3d color{};
 
