@@ -26,27 +26,29 @@ namespace gpu {
 		}
 
 		[[nodiscard]] decimal& depth_at(int x, int y) {
-			if (x < 0 || x >= width) throw std::out_of_range("out of range");
-			if (y < 0 || y >= height) throw std::out_of_range("out of range");
+			if (!is_valid(x, y)) throw std::out_of_range("out of range");
 			return depth_buffer.get()[y * width + x];
 		}
 
 		[[nodiscard]] decimal depth_at(int x, int y) const {
-			if (x < 0 || x >= width) throw std::out_of_range("out of range");
-			if (y < 0 || y >= height) throw std::out_of_range("out of range");
+			if (!is_valid(x, y)) throw std::out_of_range("out of range");
 			return depth_buffer.get()[y * width + x];
 		}
 
 		[[nodiscard]] math::BGR& color_at(int x, int y) {
-			if (x < 0 || x >= width) throw std::out_of_range("out of range");
-			if (y < 0 || y >= height) throw std::out_of_range("out of range");
+			if (!is_valid(x, y)) throw std::out_of_range("out of range");
 			return color_buffer.get()[(height - 1 - y) * width + x];
 		}
 
 		[[nodiscard]] math::BGR color_at(int x, int y) const {
-			if (x < 0 || x >= width) throw std::out_of_range("out of range");
-			if (y < 0 || y >= height) throw std::out_of_range("out of range");
+			if (!is_valid(x, y)) throw std::out_of_range("out of range");
 			return color_buffer.get()[(height - 1 - y) * width + x];
+		}
+
+		[[nodiscard]] bool is_valid(int x, int y) const {
+			if (x < 0 || x >= width) return false;
+			if (y < 0 || y >= height) return false;
+			return true;
 		}
 
 	};

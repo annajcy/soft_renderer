@@ -62,6 +62,17 @@ namespace gpu {
 			return output;
 		}
 
+		Intermediate_shader_data& perspective_divide() {
+			decimal w = position.w();
+			depth /= w;
+			inv_w /= w;
+			base_color /= w;
+			uv /= w;
+			view_normal /= w;
+			view_position /= w;
+			return *this;
+		}
+
 		Intermediate_shader_data& perspective_recover() {
 			view_position /= inv_w;
 			view_normal /= inv_w;

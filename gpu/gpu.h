@@ -47,75 +47,6 @@ namespace gpu {
 			return true;
 		}
 
-		[[nodiscard]] Intermediate_shader_data divide(const Intermediate_shader_data &input) {
-			//corrected perspective division
-			Intermediate_shader_data output{};
-
-			decimal w = input.position.w();
-			output.depth = input.depth / w;
-			output.inv_w = input.inv_w / w;
-			output.base_color = input.base_color / w;
-			output.uv = input.uv / w;
-			output.view_normal = input.view_normal / w;
-			output.view_position = input.view_position / w;
-			output.position = input.position;
-
-			return output;
-		}
-
-		[[nodiscard]] std::vector<std::array<Intermediate_shader_data, 3>> clip(const std::array<Intermediate_shader_data, 3> &face) {
-			//Use Sutherland-Hodgman to clip vertices outside the canonical cube
-
-			std::vector<std::array<Intermediate_shader_data, 3>> output{};
-
-			std::vector<math::Vector4d> normals{
-					{0.0, 0.0, 0.0, -1.0},
-					{-1.0, 0.0, 0.0, -1.0},
-					{1.0, 0.0, 0.0, -1.0},
-					{0.0, -1.0, 0.0, -1.0},
-					{0.0, 1.0, 0.0, -1.0},
-					{0.0, 0.0, -1.0, -1.0},
-					{0.0, 0.0, 1.0, -1.0},
-			};
-
-			std::vector<Intermediate_shader_data> vertices{};
-			for (auto i : {0, 1, 2}) vertices.push_back(face[i]);
-
-			for (auto &normal : normals) {
-				std::vector<Intermediate_shader_data> temp_vertices = vertices; vertices.clear();
-				for (int i = 0; i < temp_vertices.size(); i ++) {
-					auto &u = temp_vertices[i];
-					auto &v = temp_vertices[(i + 1) % temp_vertices.size()];
-
-					bool is_u_inside = sign(normal.dot(u.position));
-					bool is_v_inside = sign(normal.dot(v.position));
-
-					decimal dist_u = normal.dot(u.position);
-					decimal dist_v = normal.dot(v.position);
-					auto factor = math::get_factor(dist_u, dist_v, 0.0);
-
-					Intermediate_shader_data intersect = Intermediate_shader_data::interpolate_intermediate_shader_data(u, v, factor);
-
-					if (!is_u_inside && !is_v_inside) continue;
-
-					if (is_v_inside) vertices.push_back(v);
-					if (!is_u_inside) vertices.push_back(intersect);
-
-				}
-			}
-
-			for (int i = 1; i + 1 < vertices.size(); i ++) {
-				std::array<Intermediate_shader_data, 3> result{
-						vertices[0],
-						vertices[i],
-						vertices[i + 1]
-				};
-				output.push_back(result);
-			}
-
-			return output;
-		}
-
 		[[nodiscard]] Intermediate_shader_data screen_map(const Intermediate_shader_data &input) {
 			Intermediate_shader_data output = input;
 			output.position = math::screen(width(), height()) * normalize_homo_point(input.position);
@@ -251,26 +182,16 @@ namespace gpu {
 				if (!cull(intermediate_surface)) continue;
 
 				//perspective_divide
-				std::array<Intermediate_shader_data, 3> perspective_divided_surface{};
 				for (auto i : {0, 1, 2}) {
-					perspective_divided_surface[i] = divide(intermediate_surface[i]);
+					intermediate_surface[i].perspective_divide();
 				}
 
-				//clip
-				auto clipped_surface = clip(perspective_divided_surface);
-				if (clipped_surface.empty()) continue;
-
-				//screen_mapping
-				std::vector<std::array<Intermediate_shader_data, 3>> screen_surface{};
-				for (auto &surface : clipped_surface)  {
-					std::array<Intermediate_shader_data, 3> face{};
-					for (auto i : {0, 1, 2}) face[i] = screen_map(surface[i]);
-					screen_surface.push_back(face);
+				std::array<Intermediate_shader_data, 3> screen_surface{};
+				for (auto i : {0, 1, 2}) {
+					screen_surface[i] = screen_map(intermediate_surface[i]);
 				}
 
-				//save
-				for (auto &surface : screen_surface)
-					surfaces.push_back(surface);
+				surfaces.push_back(screen_surface);
 			}
 
 
@@ -290,6 +211,7 @@ namespace gpu {
 				for (auto &fragment : final_fragments) {
 					auto depth = fragment.depth;
 					int x = fragment.pixel_position.x(), y = fragment.pixel_position.y();
+					if (!frame_buffer->is_valid(x, y)) continue;
 					if (depth_test_enabled) {
 						if (sign(frame_buffer->depth_at(x, y) - depth) > 0) {
 							if (depth_update_enabled) frame_buffer->depth_at(x, y) = depth;

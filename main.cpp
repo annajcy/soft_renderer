@@ -52,7 +52,7 @@ auto lighting = std::make_shared<Lighting>(
 );
 
 void render() {
-	angle += 0.1;
+	angle += 0.2;
 
 	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle) * math::scale(2.5, 2.5, 2.5);
 	auto view_mat = camera->get_view_matrix();

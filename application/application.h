@@ -3,7 +3,6 @@
 #include "base.h"
 #include "../framework/event_center.h"
 
-
 namespace application {
 
 	#define DELTA_TIME 1
