@@ -5,17 +5,9 @@
 #include "base.h"
 #include "vec.h"
 #include "mat.h"
+#include "alias.h"
 
 namespace math {
-
-	using Pixel = Vec2i;
-	using Point2d = Vec2f;
-	using Point3d = Vec3f;
-	using Vector2d = Vec2f;
-	using Vector3d = Vec3f;
-	using Vector4d = Vec4f;
-	using Color_decimal = Vec4f;
-	using UV = Vec2f;
 
 	template<typename T>
 	inline T cross(const Vec<T, 2>& a, const Vec<T, 2>& b) {
@@ -27,19 +19,6 @@ namespace math {
 		return Vec<T, 3>{a.y() * b.z() - a.z() * b.y(), -(a.x() * b.z() - a.z() * b.x()), a.x() * b.y() - a.y() * b.x()};
 	}
 
-	inline void sample_pixel(std::vector<Point2d>& result, const Pixel& pixel, int scale) {
-		result.clear();
-		decimal stride = 1.0 / scale;
-		decimal startup = stride / 2;
-
-		decimal x = startup + pixel.x();
-		for (int i = 0; i < scale; x += stride, i ++) {
-			decimal y = startup + pixel.y();
-			for (int j = 0; j < scale; y += stride, j ++) {
-				result.push_back({x, y});
-			}
-		}
-	}
 
 	inline Point2d pixel_to_point2d(const Pixel& pixel) {
 		return Point2d({pixel.x() + 0.5, pixel.y() + 0.5});
@@ -63,6 +42,7 @@ namespace math {
 
 		Triangle3d() = default;
 		Triangle3d(const Point3d& a_, const Point3d& b_, const Point3d&c_) : a(a_), b(b_), c(c_) {}
+		Triangle3d(Point3d &&a_, const Point3d &&b_, const Point3d &&c_) : a(std::move(a_)), b(std::move(b_)), c(std::move(c_)) {}
 
 		[[nodiscard]] decimal area() const {
 			Vector3d ab = b - a, ac = c - a;
@@ -70,8 +50,8 @@ namespace math {
 		}
 
 		[[nodiscard]] Vector3d normal() const {
-			Vector3d ab = b - a, ac = c - a;
-			return cross(ab, ac).normalize();
+			Vector3d ab = b - a, bc = c - b;
+			return cross(ab, bc).normalize();
 		}
 
 	};
@@ -81,6 +61,7 @@ namespace math {
 
 		Triangle2d() = default;
 		Triangle2d(const Point2d& a_, const Point2d& b_, const Point2d& c_) : a(a_), b(b_), c(c_) {}
+		Triangle2d(Point2d&& a_, Point2d&& b_, Point2d&& c_) : a(std::move(a_)), b(std::move(b_)), c(std::move(c_)) {}
 
 		[[nodiscard]] decimal area() const {
 			Vector2d ab = b - a, ac = c - a;
@@ -121,21 +102,95 @@ namespace math {
 		}
 	};
 
+	struct Sphere {
+		Point3d origin{};
+		decimal radius{};
+
+		Sphere(const Point3d &origin_, const decimal &radius_) : origin(origin_), radius(radius_) {}
+		Sphere(Point3d &&origin_, decimal &&radius_) : origin(std::move(origin_)), radius(std::move(radius_)) {}
+
+	};
+
+	struct Surface {
+		Point3d p{};
+		Vector3d normal{};
+
+		Surface(const Point3d &p_, const Vector3d &normal_) : p(p_), normal(normal_) {}
+		Surface(Point3d &&p_, Vector3d &&normal_) : p(std::move(p_)), normal(std::move(normal_)) {}
+		explicit Surface(const Triangle3d &abc) : p(abc.a), normal(abc.normal()) {}
+	};
+
 	struct Ray {
-		math::Point3d origin{};
-		math::Vector3d direction{};
+		Point3d origin{};
+		Vector3d direction{};
 
 		Ray() = default;
-		Ray(const math::Point3d &origin_, const math::Point3d &direction_) : origin(origin_), direction(direction_) { }
+		Ray(const Point3d &origin_, const Point3d &direction_) : origin(origin_), direction(direction_) { }
+		Ray(Point3d &&origin_, Point3d &&direction_) : origin(std::move(origin_)), direction(std::move(direction_)) { }
 
-		[[nodiscard]] math::Point3d evaluate(decimal t) const {
+		[[nodiscard]] Point3d evaluate(decimal t) const {
 			return origin + direction * t;
+		}
+
+		[[nodiscard]] int intersect_with_sphere(const Sphere &sphere, std::pair<decimal, decimal> &result) const {
+			Vector3d co = origin - sphere.origin;
+			decimal a = direction.dot(direction);
+			decimal b = 2.0 * co.dot(direction);
+			decimal c = co.dot(co) - sphere.radius * sphere.radius;
+			decimal delta = b * b - 4 * a * c;
+			if (sign(delta) == -1) return -1;
+			else {
+				if (sign(delta) == 0) result = {-b / (2.0 * a), -b / (2.0 * a)};
+				else if (sign(delta) == 1) result = { (-b - std::sqrt(delta)) / (2.0 * a), (-b + std::sqrt(delta)) / (2.0 * a)};
+				return sign(delta);
+			}
+		}
+
+		[[nodiscard]] bool intersect_with_surface(const Surface& surface, decimal &result) const {
+			Vector3d op = surface.p - origin;
+			result = op.dot(surface.normal) / direction.dot(surface.normal);
+			return sign(result) >= 0;
 		}
 
 	};
 
 	struct RayHit {
-		math::Point3d hit_point{};
+		Triangle3d surface{};
+		Ray ray{};
+		decimal t{};
+		std::tuple<decimal, decimal, decimal> barycentric{};
+
+		RayHit(const Triangle3d &surface_, const Ray &ray_) : surface(surface_), ray(ray_) {
+			evaluate();
+		}
+
+		RayHit(Triangle3d &&surface_, Ray &&ray_) : surface(std::move(surface_)), ray(std::move(ray_)) {
+			evaluate();
+		}
+
+		void evaluate() {
+			//Möller Trumbore Algorithm
+			Vector3d e1 = surface.b - surface.a;
+			Vector3d e2 = surface.c - surface.b;
+			Vector3d s0 = ray.origin - surface.a;
+			Vector3d s1 = cross(ray.direction, e2);
+			Vector3d s2 = cross(s0, e1);
+			decimal factor = s1.dot(e1);
+
+			t = s2.dot(e2) / factor;
+			auto beta = s1.dot(s0) / factor;
+			auto gamma = s2.dot(ray.direction) / factor;
+			auto alpha = 1.0 - beta - gamma;
+			barycentric = {alpha, beta, gamma};
+		}
+
+		[[nodiscard]] bool inside() const {
+			auto &[alpha, beta, gamma] = barycentric;
+			if (alpha < 0 || alpha > 1) return false;
+			if (beta < 0 || beta > 1) return false;
+			if (gamma < 0 || gamma > 1) return false;
+			return true;
+		}
 
 	};
 

@@ -9,168 +9,196 @@
 namespace gpu {
 
 	struct Vertex_shader_input_data {
-		math::Homo3d view_position{};
-
-		Vertex_shader_input_data() = default;
-		explicit Vertex_shader_input_data(const math::Homo3d &view_position_) :
-		view_position(view_position_) {}
+		math::Point3d position{};
+		math::Vector3d normal{};
+		math::UV uv{};
+		math::Color_decimal base_color{};
 	};
 
-	struct Vertex_shader_output_data {
-		decimal inv_w{ 1.0 };
-		math::Homo3d clip_position{};
+	struct Intermediate_shader_data {
+		math::Homo3d position{};
+		math::Point3d view_position{};
+		math::Vector3d view_normal{};
+		math::UV uv{};
+		math::Color_decimal base_color{};
+		decimal depth{};
+		decimal inv_w{};
 
-		Vertex_shader_output_data() = default;
-		explicit Vertex_shader_output_data(const decimal &inv_w_, const math::Homo3d &clip_position_) :
-		inv_w(inv_w_), clip_position(clip_position_) {}
+		static Intermediate_shader_data interpolate_intermediate_shader_data(
+				const Intermediate_shader_data &u,
+				const Intermediate_shader_data &v,
+				const std::pair<decimal, decimal> &factor) {
+
+			Intermediate_shader_data output{};
+
+			output.position = math::calculate_weighed(u.position, v.position, factor);
+			output.view_position = math::calculate_weighed(u.view_position, v.view_position, factor);
+			output.view_normal = math::calculate_weighed(u.view_normal, v.view_normal, factor);
+			output.base_color = math::calculate_weighed(u.base_color, v.base_color, factor);
+			output.uv = math::calculate_weighed(u.uv, v.uv, factor);
+			output.depth =  math::calculate_weighed(u.depth, v.depth, factor);
+			output.inv_w = math::calculate_weighed(u.inv_w, v.inv_w, factor);
+
+			return output;
+
+		}
+
+		static Intermediate_shader_data interpolate_intermediate_shader_data(
+				const Intermediate_shader_data &a,
+				const Intermediate_shader_data &b,
+				const Intermediate_shader_data &c,
+				const std::tuple<decimal, decimal, decimal> &barycentric) {
+
+			Intermediate_shader_data output{};
+
+			output.position = math::calculate_weighed(a.position, b.position, c.position, barycentric);
+			output.view_position = math::calculate_weighed(a.view_position, b.view_position, c.view_position, barycentric);
+			output.view_normal = math::calculate_weighed(a.view_normal, b.view_normal, c.view_normal, barycentric);
+			output.base_color = math::calculate_weighed(a.base_color, b.base_color, c.base_color, barycentric);
+			output.uv = math::calculate_weighed(a.uv, b.uv, c.uv, barycentric);
+			output.depth = math::calculate_weighed(a.depth, b.depth, c.depth, barycentric);
+			output.inv_w = math::calculate_weighed(a.inv_w, b.inv_w, c.inv_w, barycentric);
+
+			return output;
+		}
+
+		Intermediate_shader_data& perspective_recover() {
+			view_position /= inv_w;
+			view_normal /= inv_w;
+			uv /= inv_w;
+			base_color /= inv_w;
+			depth /= inv_w;
+			return *this;
+		}
 	};
 
 	struct Fragment_shader_input_data {
-		math::Pixel pixel{};
+		math::Pixel pixel_position{};
 		decimal depth{};
-
-		Fragment_shader_input_data() = default;
-		explicit Fragment_shader_input_data(const math::Pixel  &pixel_, const decimal depth_) :
-		pixel(pixel_), depth(depth_) {}
+		math::Point3d view_position{};
+		math::Point3d view_normal{};
+		math::Point3d view_tangent{};
+		math::UV uv{};
+		math::Color_decimal base_color{};
+		decimal transparency{};
 	};
 
-	struct Fragment_shader_output_data {
-		math::Pixel pixel{};
-		decimal depth{};
+	struct Final_shader_data {
 		math::Color color{};
-
-		Fragment_shader_output_data() = default;
-		explicit Fragment_shader_output_data(const math::Pixel &pixel_, const decimal &depth_,const math::Color &color_) :
-		pixel(pixel_), depth(depth_), color(color_)
-		{}
+		math::Pixel pixel_position{};
+		decimal depth{};
 	};
 
 	class Shader {
 	public:
-		virtual ~Shader() = default;
-		virtual Vertex_shader_output_data vertex_shader(const Vertex_shader_input_data& input) = 0;
-		virtual Fragment_shader_output_data fragment_shader(const Fragment_shader_input_data& input) = 0;
+		virtual Intermediate_shader_data vertex_shader(const Vertex_shader_input_data& input) = 0;
+		virtual Final_shader_data fragment_shader(const Fragment_shader_input_data& input) = 0;
 	};
 
-	struct Default_vertex_shader_input_data : Vertex_shader_input_data {
-		math::UV main_uv{};
-		math::Point3d world_position{};
-		math::Vector3d normal{};
-
-		explicit Default_vertex_shader_input_data(
-				const math::Homo3d &view_position_,
-				const math::Point3d &world_position_,
-				const math::Vector3d &normal_,
-				const math::UV &main_uv_) :
-		Vertex_shader_input_data(view_position_),
-		normal(normal_),
-		main_uv(main_uv_),
-		world_position(world_position_)
-		{}
-	};
-
-	struct Default_vertex_shader_output_data : Vertex_shader_output_data {
-		math::UV main_uv{};
-		math::Point3d world_position{};
-		math::Vector3d world_normal{};
-		explicit Default_vertex_shader_output_data(
-				const decimal &inv_w_,
-				const math::Homo3d &clip_position_,
-				const math::UV &main_uv_,
-				const math::Point3d &world_position_,
-				const math::Vector3d world_normal_) :
-		Vertex_shader_output_data(inv_w_, clip_position_),
-		main_uv(main_uv_),
-		world_position(world_position_),
-		world_normal(world_normal_) {}
-	};
-
-	struct Default_fragment_shader_input_data : Fragment_shader_input_data {
-		math::UV main_uv{};
-		math::Point3d world_position{};
-		math::Vector3d world_normal{};
-		explicit Default_fragment_shader_input_data(
-				const math::Pixel  &pixel_,
-				const decimal &depth_,
-				const math::UV &main_uv_,
-				const math::Point3d &world_position_,
-				const math::Vector3d &world_normal_) :
-		Fragment_shader_input_data(pixel_, depth_),
-		main_uv(main_uv_),
-		world_position(world_position_),
-		world_normal(world_normal_) {}
-	};
-
-	struct Default_fragment_shader_output_data : Fragment_shader_output_data {
-		explicit Default_fragment_shader_output_data(const math::Pixel &pixel_, const decimal &depth_,const math::Color &color_) :
-		Fragment_shader_output_data(pixel_, depth_, color_) {}
-	};
 
 	//Simple Blinn-Phong Shader
-	class Default_Shader : public Shader {
+	class Blinn_Phong_Shader : public Shader {
 	public:
+		//Uniform
 		math::Transform3d model{};
 		math::Transform3d view{};
 		math::Transform3d projection{};
-		const Camera *camera = nullptr;
-		const rendering::Lightenings *lightenings = nullptr;
-		const Texture *main_texture = nullptr;
+		std::shared_ptr<rendering::Camera> camera { nullptr };
+		std::shared_ptr<rendering::Lighting> lighting { nullptr };
+		std::shared_ptr<rendering::Texture_set> textures {nullptr };
 
-		Default_Shader() = default;
-		~Default_Shader() override = default;
+		//Variable
 
-		Default_Shader(
-				const math::Transform3d  &model_,
-				const math::Transform3d  &view_,
-				const math::Transform3d  &projection_,
-				const gpu::Camera *camera_,
-				const rendering::Lightenings *lightenings_,
-				const application::Texture *main_texture_
-		) :
-		model(model_),
-		view(view_),
-		projection(projection_),
-		camera(camera_),
-		lightenings(lightenings_),
-		main_texture(main_texture_) { }
+		Blinn_Phong_Shader(
+				math::Transform3d &&model_,
+				math::Transform3d &&view_,
+				math::Transform3d &&projection_,
+				std::shared_ptr<rendering::Camera> &&camera_,
+				std::shared_ptr<rendering::Lighting> &&lighting_ ,
+				std::shared_ptr<rendering::Texture_set> &&textures_) :
+				Shader(),
+				model(std::move(model_)),
+				view(std::move(view_)),
+				projection(std::move(projection_)),
+				camera(std::move(camera_)),
+				lighting(std::move(lighting_)),
+				textures(std::move(textures_)) { }
 
-		Default_Shader(
-				math::Transform3d  &&model_,
-				math::Transform3d  &&view_,
-				math::Transform3d  &&projection_,
-				const gpu::Camera *camera_,
-				const rendering::Lightenings *lightenings_,
-				const application::Texture *main_texture_
-		) :
-		model(std::move(model_)),
-		view(std::move(view_)),
-		projection(std::move(projection_)),
-		camera(camera_),
-		lightenings(lightenings_),
-		main_texture(main_texture_) { }
+		Blinn_Phong_Shader(
+				const math::Transform3d &model_,
+				const math::Transform3d &view_,
+				const math::Transform3d &projection_,
+				const std::shared_ptr<rendering::Camera> &camera_,
+				const std::shared_ptr<rendering::Lighting> &lighting_ ,
+				const std::shared_ptr<rendering::Texture_set> &textures_) :
+				Shader(),
+				model(model_),
+				view(view_),
+				projection(projection_),
+				camera(camera_),
+				lighting(lighting_),
+				textures(textures_) { }
 
-		Vertex_shader_output_data vertex_shader(const Vertex_shader_input_data& input) override {
+		Intermediate_shader_data vertex_shader(const Vertex_shader_input_data& input) override {
 
-//			auto mvp = projection * view * model;
-//			auto normal_mvp = mvp.inv().transpose();
-//			auto normal_mvp_blocked = normal_mvp.block<double, 3, 3>(0, 0);
-//			auto clip = mvp * input.position;
-//			auto normal = (normal_mvp_blocked * input.normal).normalize();
-//
-//			return {
-//					clip,
-//					input.color,
-//					input.uv,
-//					1.0 / clip.w(),
-//					normal,
-//					input.world_position
-//			};
+			Intermediate_shader_data output{};
 
+			auto mvp = projection * view * model;
+			auto mv = view * model;
 
+			output.position = mvp * to_homo_point(input.position);
+			output.view_position = to_point((mv * to_homo_point(input.position)));
+			output.view_normal = to_vector((mv.transpose().inv() * to_homo_vector(input.normal))).normalize();
+			output.uv = input.uv;
+			output.base_color = input.base_color;
+			output.depth = output.view_position.z();
+			output.inv_w = 1.0;
+
+			return output;
 		}
 
-		Fragment_shader_output_data fragment_shader(const Fragment_shader_input_data& input) override {
-			//return input;
+		Final_shader_data fragment_shader(const Fragment_shader_input_data& input) override {
+			Final_shader_data output{};
+			output.pixel_position = input.pixel_position;
+			output.depth = abs(input.depth);
+
+			auto main_texture_val = to_vector(textures->get_texture("main")->at_uv_bilinear(input.uv.x(), input.uv.y()).to_color_decimal());
+			auto height_texture_val = to_vector(textures->get_texture("height")->at_uv_bilinear(input.uv.x(), input.uv.y()).to_color_decimal());
+
+			decimal ka = 0.005, kd = 1.0, ks = 0.7937;
+			int kp = 150;
+			
+			math::Vector3d color{};
+
+			for (auto &al : lighting->ambient_lights) {
+				color += ka * al.propagate();
+			}
+
+			for (auto &pl : lighting->point_lights) {
+				auto view_direction = input.view_position.normalize();
+				auto light_direction = (input.view_position - pl.origin).normalize();
+				auto half_direction = (view_direction + light_direction).normalize();
+				auto distance = input.view_position.norm();
+				
+				auto diffuse = kd * main_texture_val * pl.propagate(distance) * std::max(0.0, input.view_normal.dot(light_direction));
+				auto specular = ks * pl.propagate(distance) * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
+				
+				color += diffuse + specular;
+			}
+
+			for (auto &dl : lighting->directional_lights) {
+				auto view_direction = input.view_position.normalize();
+				auto light_direction = dl.direction.normalize();
+				auto half_direction = (view_direction + light_direction).normalize();
+
+				auto diffuse = kd * main_texture_val * dl.propagate() * std::max(0.0, input.view_normal.dot(light_direction));
+				auto specular = ks * dl.propagate() * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
+				
+				color += diffuse + specular;
+			}
+
+			output.color = math::Color(math::Color_decimal {color.x(), color.y(), color.z(), input.transparency});
+			return output;
 		}
 	};
 

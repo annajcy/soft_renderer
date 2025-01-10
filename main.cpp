@@ -3,109 +3,72 @@
 #include "raster.h"
 #include "maths.h"
 #include "base.h"
-#include "color.h"
 #include "camera.h"
-#include "model.h"
+#include "mesh.h"
 
 using namespace application;
 using namespace gpu;
 using namespace rendering;
-using namespace model_loader;
+using namespace mesh;
 
 std::string app_id = "soft_renderer";
-int height = 300;
-int width = 400;
+int height = 700;
+int width = 700;
 
-decimal angle = 0.0;
-decimal camera_z = 5.0;
+decimal angle = -40;
+decimal camera_z = 10.0;
 
 std::string model_path = "assets/obj/spot/spot_triangulated_good.obj";
-std::string texture_path = "assets/obj/spot/spot_texture.png";
+std::string main_texture_path = "assets/obj/spot/spot_texture.png";
+std::string displacement_texture_path = "assets/obj/spot/hmap.jpg";
 
-Camera camera(
-		70.0,
-		(decimal)width / height,
-		-0.5,
-		-1000.0,
-		{0.0, 0.0, 1.0},
-		{0.0, 1.0, 0.0},
-		{0.0, 0.0, -camera_z});
+auto model = std::make_shared<Model>(model_path);
+auto textures = std::make_shared<Texture_set>(std::unordered_map<std::string, std::shared_ptr<application::Texture>> {
+		{"main", std::make_shared<Texture>(main_texture_path)},
+		{"height", std::make_shared<Texture>(displacement_texture_path)}
+});
 
-Lightenings lightenings;
-Texture main_texture(texture_path);
-Model model(model_path);
+auto camera = std::make_shared<Camera>(
+		45.0,
+		(decimal) width / height,
+		-0.1,
+		-50.0,
+		math::Vector3d {0.0, 0.0, 1.0},
+		math::Vector3d {0.0, 1.0, 0.0},
+		math::Vector3d {0.0, 0.0, -camera_z}
+);
 
-
-//decimal positions[] = {
-//	-3.0, 0.0, 0.0,
-//	3.0, 0.0, 0.0,
-//	0.0, 5.0, 0.0,
-//};
-//
-//decimal colors[] = {
-//	1.0, 0.0, 0.0, 1.0,
-//	0.0, 1.0, 0.0, 1.0,
-//	0.0, 0.0, 1.0, 1.0,
-//};
-//
-//decimal uvs[] = {
-//	0.0, 0.0,
-//	0.0, 1.0,
-//	1.0, 0.0,
-//};
-//
-//int indices[] = { 0, 1, 2 };
-
-void load() {
-	
-//	int ebo = GPU::get_instance()->generate(OBJECT::ELEMENT_BUFFER);
-//	GPU::get_instance()->bind(OBJECT::ELEMENT_BUFFER, ebo);
-//	GPU::get_instance()->set_ebo(indices, sizeof(indices) / sizeof(int));
-//
-//	int vertex_vao = GPU::get_instance()->generate(OBJECT::VERTEX_ARRAY);
-//	GPU::get_instance()->bind(OBJECT::VERTEX_ARRAY, vertex_vao);
-//	GPU::get_instance()->set_vao({1, 3, 0, 3});
-//
-//	int color_vao = GPU::get_instance()->generate(OBJECT::VERTEX_ARRAY);
-//	GPU::get_instance()->bind(OBJECT::VERTEX_ARRAY, color_vao);
-//	GPU::get_instance()->set_vao({2, 4, 0, 4});
-//
-//	int uv_vao = GPU::get_instance()->generate(OBJECT::VERTEX_ARRAY);
-//	GPU::get_instance()->bind(OBJECT::VERTEX_ARRAY, uv_vao);
-//	GPU::get_instance()->set_vao({3, 2, 0, 2});
-//
-//	int position_vbo = GPU::get_instance()->generate(OBJECT::VERTEX_BUFFER);
-//	GPU::get_instance()->bind(OBJECT::VERTEX_BUFFER, position_vbo);
-//	GPU::get_instance()->set_vbo(positions, sizeof(positions) / sizeof(decimal));
-//
-//	int color_vbo = GPU::get_instance()->generate(OBJECT::VERTEX_BUFFER);
-//	GPU::get_instance()->bind(OBJECT::VERTEX_BUFFER, color_vbo);
-//	GPU::get_instance()->set_vbo(colors, sizeof(colors) / sizeof(decimal));
-//
-//	int uv_vbo = GPU::get_instance()->generate(OBJECT::VERTEX_BUFFER);
-//	GPU::get_instance()->bind(OBJECT::VERTEX_BUFFER, uv_vbo);
-//	GPU::get_instance()->set_vbo(uvs, sizeof(uvs) / sizeof(decimal));
-}
+auto lighting = std::make_shared<Lighting>(
+		std::vector<Point_light> {
+			Point_light{math::Color::white(), {10.0, 10.0, 10.0}, {500, 500, 500}},
+			Point_light{math::Color::white(), {-10.0, 10.0, 10.0}, {500, 500, 500}},
+		},
+		std::vector<Directional_light> {
+			Directional_light(math::Color::white(), {1.0, 1.0, 1.0}, {500, 500, 500})
+		},
+		std::vector<Ambient_light> {
+			Ambient_light {math::Color::white(), {10, 10, 10}}
+		}
+);
 
 void render() {
 	angle += 0.1;
 
-	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle);
-	auto view_mat = camera.get_view_matrix();
-	auto projection_mat = camera.get_projection_matrix();
+	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle) * math::scale(2.5, 2.5, 2.5);
+	auto view_mat = camera->get_view_matrix();
+	auto projection_mat = camera->get_projection_matrix();
 
-	Default_Shader default_shader(model_mat, view_mat, projection_mat, &camera, &lightenings, &main_texture);
-	GPU::get_instance()->set_shader(default_shader);
+	auto blinn_phong_Shader = std::make_shared<Blinn_Phong_Shader>(model_mat, view_mat, projection_mat, camera, lighting, textures);
 
-	GPU::get_instance()->draw_primitive(PRIMITIVE::TRIANGLE);
+    GPU::get_instance()->set_shader(blinn_phong_Shader);
+	GPU::get_instance()->draw_model(model);
+
 }
 
 int main()
 {
 	GPU::get_instance()->init(width, height);
-	Application::get_instance()->init(width, height, app_id, GPU::get_instance()->color_buffer());
-
-	load();
+	Application::get_instance()->init(width, height, app_id, GPU::get_instance()->color_buffer_raw());
 
 	while (Application::get_instance()->active) {
 		GPU::get_instance()->clear();

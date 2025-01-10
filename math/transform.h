@@ -14,7 +14,10 @@ namespace math {
 	inline Homo3d to_homo_point(const Point3d& v) { return Homo3d{v.x(), v.y(), v.z(), 1.0}; } 
 
 	inline Point2d to_point(const Homo2d& v) { return Point2d{v.x() / v.z(), v.y() / v.z()}; }
-	inline Point3d to_point(const Homo3d& v) { return Point3d{v.x() / v.w(), v.y() / v.w(), v.z() / v.w()}; } 
+	inline Point3d to_point(const Homo3d& v) { return Point3d{v.x() / v.w(), v.y() / v.w(), v.z() / v.w()}; }
+
+	inline Point2d to_vector(const Homo2d& v) { return Point2d{v.x(), v.y()}; }
+	inline Point3d to_vector(const Homo3d& v) { return Point3d{v.x(), v.y(), v.z()}; }
 
 	inline Homo2d normalize_homo_point(const Homo2d& v) { return Homo2d{v.x() / v.z(), v.y() / v.z(), 1.0}; }
 	inline Homo3d normalize_homo_point(const Homo3d& v) { return Homo3d{v.x() / v.w(), v.y() / v.w(), v.z() / v.w(), 1.0}; } 

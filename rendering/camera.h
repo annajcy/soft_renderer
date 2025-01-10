@@ -6,7 +6,7 @@
 #include "maths.h"
 #include "event_center.h"
 
-namespace gpu {
+namespace rendering {
 	enum CAMERA_MODE{
 		TRANSLATE,
 		ROTATE
@@ -114,8 +114,23 @@ namespace gpu {
 			register_events();
 		}
 
+		void place_at(const math::Point3d &place_at_point) {
+			delta_x = place_at_point.x() - position().x();
+			delta_y = place_at_point.y() - position().y();
+			delta_z = place_at_point.z() - position().z();
+		}
+
+		void look_at(const math::Point3d &look_at_point) {
+			math::Vector3d direction = (look_at_point - position()).normalize();
+			decimal new_yaw = std::atan2(direction.z(), direction.x());
+			decimal new_pitch = std::asin(direction.y());
+			decimal delta_yaw = new_yaw - yaw;
+			decimal delta_pitch = new_pitch - pitch;
+			rotate(delta_yaw, delta_pitch);
+		}
+
 		void rotate(decimal delta_yaw, decimal delta_pitch) {
-			yaw -= rotation_sensitivity * delta_yaw, pitch += rotation_sensitivity * delta_pitch;
+			yaw += rotation_sensitivity * delta_yaw, pitch += rotation_sensitivity * delta_pitch;
 		}
 
 		void translate(const math::Vector3d& direction, decimal distance) {

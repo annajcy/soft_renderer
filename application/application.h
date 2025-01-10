@@ -14,7 +14,7 @@ namespace application {
 		static Application* instance;
 
 		cv::Mat canvas{ };
-		std::shared_ptr<u_int8_t[]> canvas_buffer{ nullptr };
+		u_int8_t* canvas_buffer{ nullptr };
 		int width{ 0 };
 		int height{ 0 };
 
@@ -48,11 +48,11 @@ namespace application {
 		cv::String app_id{ "app" };
 		bool active{ false };
 
-		void init(int width_, int height_, const std::string &app_id_ , const std::shared_ptr<u_int8_t[]>& frame_buffer) {
-			if (!frame_buffer) throw std::invalid_argument("invalid frame buffer");
-			canvas_buffer = frame_buffer;
+		void init(int width_, int height_, const std::string &app_id_ , u_int8_t* color_buffer) {
+			if (!color_buffer) throw std::invalid_argument("invalid frame buffer");
+			canvas_buffer = color_buffer;
 			app_id = app_id_, width = width_, height = height_, active = true;
-			canvas = cv::Mat(height, width, CV_8UC3, canvas_buffer.get());
+			canvas = cv::Mat(height, width, CV_8UC3, canvas_buffer);
 			cv::namedWindow(app_id, cv::WINDOW_NORMAL);
 			cv::resizeWindow(app_id, width, height);
 			cv::setMouseCallback(app_id, mouse_callback, nullptr);

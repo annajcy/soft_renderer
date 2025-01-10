@@ -139,6 +139,49 @@ namespace application {
 			return color;
 		}
 
+		//raster image
+		static void render_image_fixed(std::vector<std::pair<math::Pixel, math::Color>>& result, const Image& image, const math::Pixel& start_point = {0, 0}) {
+			result.clear();
+			int start_x = start_point.x(), start_y = start_point.y();
+			for (int i = 0, y = start_y; i < image.height; i ++, y ++)
+				for (int j = 0, x = start_x; j < image.width; j ++, x ++) {
+					result.push_back({{x, y}, image.at(x, y)});
+				}
+		}
+
+		static void render_image(
+				std::vector<std::pair<math::Pixel, math::Color>>& result,
+				const Image& image,
+				const math::Pixel& start_point = {0, 0},
+				int width = 100, int height = 100,
+				bool bilinear = true,
+				WRAP_MODE warp_mode = WRAP_MODE::REPEAT,
+				FILL_MODE fill_mode = FILL_MODE::FIT_HEIGHT
+		) {
+			result.clear();
+			int stride_x = image.width / width, stride_y = image.height / height;
+			int start_x = start_point.x(), start_y = start_point.y();
+			for (int i = 0, y = start_y; i < height; i ++, y ++)
+				for (int j = 0, x = start_x; j < width; j ++, x ++) {
+
+					decimal u, v;
+					if (warp_mode == WRAP_MODE::NONE) {
+						u = (decimal)j / width, v = (decimal)i / height;
+					} else {
+						if (fill_mode == FILL_MODE::FIT_HEIGHT) {
+							u = (decimal)j / width * width / height / image.ratio(), v = (decimal)i / height;
+						} else if (fill_mode == FILL_MODE::FIT_WIDTH) {
+							u = (decimal)j / width, v = (decimal)i / height * height / width * image.ratio();
+						} else {
+							u = (decimal)j / image.width, v = (decimal)i / image.height;
+						}
+					}
+
+					result.push_back({{x, y}, image.at_uv(u, v, bilinear, warp_mode)});
+
+				}
+		}
+
 	};
 
 	using Texture = Image;

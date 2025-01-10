@@ -6,20 +6,9 @@
 #include "buffer_object.h"
 #include "shader.h"
 #include "raster.h"
-#include "camera.h"
+#include "mesh.h"
 
 namespace gpu {
-
-	enum OBJECT {
-		VERTEX_ARRAY,
-		VERTEX_BUFFER,
-		ELEMENT_BUFFER
-	};
-
-	enum PRIMITIVE {
-		TRIANGLE,
-		LINE,
-	};
 
 	enum CULL_TYPE {
 		FRONT,
@@ -32,126 +21,52 @@ namespace gpu {
 	private:
 		static GPU* instance;
 
-		std::unique_ptr<Frame_buffer> frame_buffer{ nullptr };
-
-		std::unordered_map<int, VAO> vao_map{};
-		std::unordered_map<int, VBO> vbo_map{};
-		std::unordered_map<int, EBO> ebo_map{};
-		int vbo_count{ 0 }, vao_count{ 0 }, ebo_count{ 0 };
-		int vbo_id{ 0 }, vao_id{ 0 }, ebo_id{ 0 };
-
-		std::unique_ptr<Shader> shader{ nullptr };
+		std::shared_ptr<Frame_buffer> frame_buffer{ nullptr };
+		std::shared_ptr<Shader> shader{ nullptr };
 
 		GPU() = default;
 
-		void vertex_shade(std::vector<Vertex_shader_data>& output) {
+		[[nodiscard]] bool cull(const std::array<Intermediate_shader_data, 3> &face) const {
+			//if triangle is faced backward, then discard
 
-			output.clear();
+			math::Point2d a = cast_dims<2>(to_point((face[0].position)));
+			math::Point2d b = cast_dims<2>(to_point((face[1].position)));
+			math::Point2d c = cast_dims<2>(to_point((face[2].position)));
 
-			if (!ebo_map.contains(ebo_id)) {
-				throw std::invalid_argument("invalid ebo");
+			math::Vector2d ab = b - a;
+			math::Vector2d bc = c - b;
+
+			if (cull_type == CULL_TYPE::BACK) {
+				if (sign(cross(ab, bc)) == -1) return false;
+				return true;
+			} else if (cull_type == CULL_TYPE::FRONT) {
+				if (sign(cross(ab, bc)) == 1) return false;
+				return true;
 			}
 
-			auto& ebo = ebo_map[ebo_id];
-
-			std::map<int, Vertex_shader_data> vs_data;
-
-			for (int i = 0; i <= ebo.vertex_size; i ++) {
-				int vertex_id = i;
-
-				//position
-				auto [id0, stride0, offset0, item_size0] = vao_map[1];
-				auto position = vbo_map[id0].get_buffer_data(vertex_id, stride0, offset0, item_size0);
-				auto position_f = math::to_homo_point(math::Point3d{position.get(), 3});
-
-				//color
-				auto [id1, stride1, offset1, item_size1] = vao_map[2];
-				auto color = vbo_map[id1].get_buffer_data(vertex_id, stride1, offset1, item_size1);
-				auto color_f = math::Color_decimal(color.get(), 4);
-
-				//uv
-				auto [id2, stride2, offset2, item_size2] = vao_map[3];
-				auto uv = vbo_map[id2].get_buffer_data(vertex_id, stride2, offset2, item_size2);
-				auto uv_f = math::UV(uv.get(), 2);
-
-				vs_data[vertex_id] = Vertex_shader_data{
-						position_f,
-						color_f,
-						uv_f,
-						1.0,
-						math::Vec3f::zeros(),
-						math::Point3d{position.get(), 3}};
-			}
-
-			if (auto_generate_normals) {
-
-				for (int i = 0; i + 2 < ebo.data.size(); i += 3) {
-					math::Triangle3d abc(
-							to_point(vs_data[i].position),
-							to_point(vs_data[i + 1].position),
-							to_point(vs_data[i + 2].position)
-					);
-
-					vs_data[ebo.data[i]].normal += abc.normal();
-					vs_data[ebo.data[i + 1]].normal += abc.normal();
-					vs_data[ebo.data[i + 2]].normal += abc.normal();
-
-				}
-
-				for (auto &[_, vsd] : vs_data) {
-					vsd.normal.normalize();
-				}
-			}
-
-			for (auto &[_, vsd] : vs_data) {
-				auto vs_output = shader->vertex_shader(vsd);
-				output.push_back(std::move(vs_output));
-			}
+			return true;
 		}
 
-		void clip_cull(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
+		[[nodiscard]] Intermediate_shader_data divide(const Intermediate_shader_data &input) {
+			//corrected perspective division
+			Intermediate_shader_data output{};
 
-			auto get_intersect = [&](
-					const Vertex_shader_data& u,
-					const Vertex_shader_data& v,
-					const math::Vector4d& normal
-			) -> Vertex_shader_data {
+			decimal w = input.position.w();
+			output.depth = input.depth / w;
+			output.inv_w = input.inv_w / w;
+			output.base_color = input.base_color / w;
+			output.uv = input.uv / w;
+			output.view_normal = input.view_normal / w;
+			output.view_position = input.view_position / w;
+			output.position = input.position;
 
-				decimal dist_u = normal.dot(u.position), dist_v = normal.dot(v.position);
-				auto factor = math::get_factor(dist_u, dist_v, 0.0);
+			return output;
+		}
 
-				auto position = math::calculate_weighed(u.position, v.position, factor);
-				auto color = math::calculate_weighed(u.color, v.color, factor);
-				auto uv = math::calculate_weighed(u.uv, v.uv, factor);
-				auto vertex_normal = math::calculate_weighed(u.normal, v.normal, factor);
-				auto world_position = math::calculate_weighed(u.world_position, v.world_position, factor);
-				auto inv_w = 1.0 / position.w();
+		[[nodiscard]] std::vector<std::array<Intermediate_shader_data, 3>> clip(const std::array<Intermediate_shader_data, 3> &face) {
+			//Use Sutherland-Hodgman to clip vertices outside the canonical cube
 
-				return {position, color, uv, inv_w, vertex_normal, world_position};
-
-			};
-
-			auto inside = [&](const math::Vector4d& normal, const math::Homo3d& point) -> bool {
-				return sign(normal.dot(point)) >= 0;
-			};
-
-			auto clipper = [&](
-					std::vector<Vertex_shader_data>& out,
-					const Vertex_shader_data& u,
-					const Vertex_shader_data& v,
-					const math::Vector4d& normal
-			) {
-
-				if (inside(normal, u.position) && inside(normal, v.position)) {
-					out.push_back(v);
-				} else if (!inside(normal, u.position) && inside(normal, v.position)) {
-					out.push_back(get_intersect(u, v, normal)); //it must be pushed in prior to v
-					out.push_back(v);
-				} else if (inside(normal, u.position) && !inside(normal, v.position)) {
-					out.push_back(get_intersect(u, v, normal));
-				}
-
-			};
+			std::vector<std::array<Intermediate_shader_data, 3>> output{};
 
 			std::vector<math::Vector4d> normals{
 					{0.0, 0.0, 0.0, -1.0},
@@ -163,119 +78,113 @@ namespace gpu {
 					{0.0, 0.0, 1.0, -1.0},
 			};
 
-			std::vector<Vertex_shader_data> result;
+			std::vector<Intermediate_shader_data> vertices{};
+			for (auto i : {0, 1, 2}) vertices.push_back(face[i]);
 
-			for (int i = 0; i + 2 < input.size(); i += 3) {
+			for (auto &normal : normals) {
+				std::vector<Intermediate_shader_data> temp_vertices = vertices; vertices.clear();
+				for (int i = 0; i < temp_vertices.size(); i ++) {
+					auto &u = temp_vertices[i];
+					auto &v = temp_vertices[(i + 1) % temp_vertices.size()];
 
-				std::vector<Vertex_shader_data> primitive{
-						input[i],
-						input[i + 1],
-						input[i + 2]
+					bool is_u_inside = sign(normal.dot(u.position));
+					bool is_v_inside = sign(normal.dot(v.position));
+
+					decimal dist_u = normal.dot(u.position);
+					decimal dist_v = normal.dot(v.position);
+					auto factor = math::get_factor(dist_u, dist_v, 0.0);
+
+					Intermediate_shader_data intersect = Intermediate_shader_data::interpolate_intermediate_shader_data(u, v, factor);
+
+					if (!is_u_inside && !is_v_inside) continue;
+
+					if (is_v_inside) vertices.push_back(v);
+					if (!is_u_inside) vertices.push_back(intersect);
+
+				}
+			}
+
+			for (int i = 1; i + 1 < vertices.size(); i ++) {
+				std::array<Intermediate_shader_data, 3> result{
+						vertices[0],
+						vertices[i],
+						vertices[i + 1]
 				};
+				output.push_back(result);
+			}
 
-				auto ab = cast_dims<2>(input[i + 1].position) - cast_dims<2>(input[i].position);
-				auto bc = cast_dims<2>(input[i + 2].position) - cast_dims<2>(input[i + 1].position);
+			return output;
+		}
 
-				if (cull_type == CULL_TYPE::BACK) {
-					if (sign(cross(ab, bc)) == -1) continue;
-				} else if (cull_type == CULL_TYPE::FRONT) {
-					if (sign(cross(ab, bc)) == 1) continue;
-				}
+		[[nodiscard]] Intermediate_shader_data screen_map(const Intermediate_shader_data &input) {
+			Intermediate_shader_data output = input;
+			output.position = math::screen(width(), height()) * normalize_homo_point(input.position);
+			return output;
+		}
 
-				result = primitive;
+		[[nodiscard]] std::vector<Fragment_shader_input_data> rasterize_triangle(const std::array<Intermediate_shader_data, 3> &input) const {
 
-				for (auto &normal : normals) {
-					std::vector<Vertex_shader_data> data = result;
-					result.clear();
-					for (int j = 0; j < data.size(); j ++) {
-						auto& u = data[j];
-						auto& v = data[(j + 1) % data.size()];
-						clipper(result, u, v, normal);
+			std::vector<Fragment_shader_input_data> output{};
+
+			auto pa = cast_dims<2>(input[0].position);
+			auto pb = cast_dims<2>(input[1].position);
+			auto pc = cast_dims<2>(input[2].position);
+
+			math::Triangle2d triangle(pa, pb, pc);
+			auto [left_bottom, right_top] = triangle.bounding_box();
+			for (int x = left_bottom.x(); x <= right_top.x(); x ++)
+				for (int y = left_bottom.y(); y <= right_top.y(); y ++) {
+
+					std::vector<math::Point2d> sampled_points =
+							math::sample_pixel(math::Pixel{x, y}, MSAA);
+
+					int enclosed = 0;
+					for (auto &p : sampled_points)
+						if (triangle.enclose(p)) enclosed ++;
+					if(!enclosed) continue;
+
+					auto barycentric = math::get_factor(pa, pb, pc, math::Point2d{x, y});
+
+					Intermediate_shader_data interpolated_data = Intermediate_shader_data::interpolate_intermediate_shader_data(
+							input[0], input[1], input[2], barycentric
+							).perspective_recover();
+
+					Fragment_shader_input_data frag{};
+
+					frag.transparency = (decimal)enclosed / (MSAA * MSAA);
+					frag.depth = interpolated_data.depth;
+					frag.base_color = interpolated_data.base_color;
+					frag.uv = interpolated_data.uv;
+					frag.view_position = interpolated_data.view_position;
+					frag.view_normal = interpolated_data.view_normal.normalize();
+					frag.pixel_position = math::Pixel{x, y};
+
+					//tangent
+					decimal nx = frag.view_normal.x();
+					decimal ny = frag.view_normal.y();
+					decimal nz = frag.view_normal.z();
+
+					if (!sign(nx) && !sign(ny)) {
+						frag.view_tangent = math::Vector3d {1.0, 0.0, 0.0};
+					} else {
+						double d = std::sqrt(nx * nx + nz * nz);
+						frag.view_tangent = math::Vector3d {(nx * ny) / d, d, (nz * ny) / d}.normalize();
 					}
+
+					output.push_back(frag);
 				}
 
-				for (int j = 1; j + 1 < result.size(); j ++ ) {
-					output.push_back(result[0]);
-					output.push_back(result[j]);
-					output.push_back(result[j + 1]);
-				}
-			}
+			return output;
 		}
 
-		void perspective_division(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
-			output.clear();
-			for (auto &data : input) {
-				data.position = math::normalize_homo_point(data.position);
-				data.color *= data.inv_w;
-				data.uv *= data.inv_w;
-				data.normal *= data.inv_w;
-			}
-			output = std::move(input);
-		}
-
-		void screen_mapping(std::vector<Vertex_shader_data>& output, std::vector<Vertex_shader_data>& input) {
-			output.clear();
-			for (auto &data : input)
-				data.position = math::screen(width(), height()) * data.position;
-			output = std::move(input);
-		}
-
-		void rasterizing(std::vector<Fragment_shader_data>& output, std::vector<Vertex_shader_data>& input) {
-			output.clear();
-			for (int i = 0; i < input.size(); i += 3) {
-				std::vector<Fragment_shader_data> result;
-				Raster::triangle_shader_data(result, input[i], input[i + 1], input[i + 2], MSAA);
-				for (auto &data : result) {
-					output.push_back(data);
-				}
-			}
-		}
-
-		void fragment_shade(std::vector<Fragment_shader_data>& output, std::vector<Fragment_shader_data>& input) {
-			output.clear();
-			for (auto &data : input) {
-				output.push_back(shader->fragment_shader(data));
-			}
-		}
-
-		void draw(std::vector<Fragment_shader_data>& input) {
-			for (auto &fragment : input) {
-				Arithmetic auto x = fragment.pixel.x(), y = fragment.pixel.y();
-				auto depth = fragment.depth;
-				if (depth_test_enabled) {
-					if (depth >= frame_buffer->depth_at(x, y)) {
-						if (depth_update_enabled) frame_buffer->depth_at(x, y) = depth;
-						set_pixel(x, y, fragment.color, blend_enabled);
-					}
-				} else {
-					set_pixel(x, y, fragment.color, blend_enabled);
-				}
-
-			}
-		}
-
-		void draw_line() {
-			throw std::invalid_argument("not implemented");
-		}
-
-		void draw_triangle() {
-			std::vector<Vertex_shader_data> vertex_shade_output; vertex_shade(vertex_shade_output);
-			std::vector<Vertex_shader_data> clip_cull_output; clip_cull(clip_cull_output, vertex_shade_output);
-			std::vector<Vertex_shader_data> perspective_division_output; perspective_division(perspective_division_output, clip_cull_output);
-			std::vector<Vertex_shader_data> screen_mapping_output; screen_mapping(screen_mapping_output, perspective_division_output);
-			std::vector<Fragment_shader_data> rasterizing_output; rasterizing(rasterizing_output, screen_mapping_output);
-			std::vector<Fragment_shader_data> fragment_shade_output; fragment_shade(fragment_shade_output, rasterizing_output);
-			draw(fragment_shade_output);
-		}
 
 	public:
 
 		//vertices arranged clockwise represent front face
 		CULL_TYPE cull_type = CULL_TYPE::DISABLE;
-		PRIMITIVE primitive_type = PRIMITIVE::TRIANGLE;
 
 		int MSAA = 1;
-		bool blend_enabled = true;
+		bool blend_enabled = false;
 		bool depth_test_enabled = true;
 		bool depth_update_enabled = true;
 
@@ -286,17 +195,13 @@ namespace gpu {
 			return instance;
 		}
 
-		void init(int width, int height) {
-			frame_buffer = std::make_unique<Frame_buffer>(width, height);
-		}
-
+		void init(int width, int height) { frame_buffer = std::make_shared<Frame_buffer>(width, height); }
 		int height() { return frame_buffer->height; }
 		int width() { return frame_buffer->width; }
-
 		void clear() { frame_buffer->clear(); }
 
-		std::shared_ptr<u_int8_t[]> color_buffer() {
-			return { reinterpret_cast<u_int8_t*>(frame_buffer->color_buffer.get()), [](u_int8_t*) { } };
+		u_int8_t* color_buffer_raw() {
+			return reinterpret_cast<u_int8_t*>(frame_buffer->color_buffer.get());
 		}
 
 		//the color format of opencv is BGR
@@ -314,84 +219,89 @@ namespace gpu {
 			}
 		}
 
-		int generate(OBJECT object) {
-			if (object == OBJECT::VERTEX_ARRAY) {
-				vao_map.insert({++ vao_count, VAO{}});
-				return vao_count;
-			} else if (object == OBJECT::VERTEX_BUFFER) {
-				vbo_map.insert({++ vbo_count, VBO{}});
-				return vbo_count;
-			} else if (object == OBJECT::ELEMENT_BUFFER) {
-				ebo_map.insert({++ ebo_count, EBO{}});
-				return ebo_count;
-			}
-			return 0;
-		}
-
-		void bind(OBJECT object, int id) {
-			if (object == OBJECT::VERTEX_ARRAY) {
-				vao_id = id;
-			} else if (object == OBJECT::VERTEX_BUFFER) {
-				vbo_id = id;
-			} else if (object == OBJECT::ELEMENT_BUFFER) {
-				ebo_id = id;
-			}
-		}
-
-		void set_ebo(int* data, int size) {
-			if (!ebo_map.contains(ebo_id)) throw std::invalid_argument("invalid id");
-			auto ebo = EBO(data, size);
-			ebo.update_vertex_size();
-			ebo_map[ebo_id] = ebo;
-		}
-
 		template<typename T>
-		void set_vbo(T *data, int size) {
-			if (!vbo_map.contains(vbo_id)) throw std::invalid_argument("invalid id");
-			vbo_map[vbo_id].set_buffer_data(reinterpret_cast<void*>(data), size);
+		void set_shader(const std::shared_ptr<T> shader_) requires Inherited<Shader, typename std::remove_reference<T>::type> {
+			shader = shader_;
 		}
 
-		void set_vao(const VAO& vao) {
-			if (!vao_map.contains(vao_id)) throw std::invalid_argument("invalid id");
-			vao_map[vao_id] = vao;
-		}
+		void draw_model(const std::shared_ptr<mesh::Model> &model) {
 
-		template<typename T>
-		void set_shader(const T& shader_) requires Inherited<Shader, typename std::remove_reference<T>::type> {
-			shader = std::make_unique<T>(shader_);
-		}
+			std::vector<std::array<Intermediate_shader_data, 3>> surfaces;
 
-		void draw_primitive(PRIMITIVE primitive) {
-			if (primitive == PRIMITIVE::TRIANGLE) {
-				draw_triangle();
-			} else if (primitive == PRIMITIVE::LINE) {
-				draw_line();
+			for (int fid = 0; fid < model->face_count(); fid ++) {
+
+				//prepare data
+				std::array<Vertex_shader_input_data, 3> face_vs_data{};
+				for (int vid : {0, 1, 2}) {
+					Vertex_shader_input_data input{};
+					input.uv = model->uv(fid, vid);
+					input.position = model->position(fid, vid);
+					input.normal = model->normal(fid, vid);
+					input.base_color = math::Color::white().to_color_decimal();
+					face_vs_data[vid] = input;
+				}
+
+				//vertex shade
+				std::array<Intermediate_shader_data, 3> intermediate_surface{};
+				for (int vid : {0, 1, 2}) {
+					intermediate_surface[vid] = shader->vertex_shader(face_vs_data[vid]);
+				}
+
+				//cull
+				if (!cull(intermediate_surface)) continue;
+
+				//perspective_divide
+				std::array<Intermediate_shader_data, 3> perspective_divided_surface{};
+				for (auto i : {0, 1, 2}) {
+					perspective_divided_surface[i] = divide(intermediate_surface[i]);
+				}
+
+				//clip
+				auto clipped_surface = clip(perspective_divided_surface);
+				if (clipped_surface.empty()) continue;
+
+				//screen_mapping
+				std::vector<std::array<Intermediate_shader_data, 3>> screen_surface{};
+				for (auto &surface : clipped_surface)  {
+					std::array<Intermediate_shader_data, 3> face{};
+					for (auto i : {0, 1, 2}) face[i] = screen_map(surface[i]);
+					screen_surface.push_back(face);
+				}
+
+				//save
+				for (auto &surface : screen_surface)
+					surfaces.push_back(surface);
 			}
-		}
 
-		void print_state() {
-			print(OBJECT::VERTEX_ARRAY);
-			print(OBJECT::VERTEX_BUFFER);
-			print(OBJECT::ELEMENT_BUFFER);
-		}
 
-		void print(OBJECT object) {
-			if (object == OBJECT::VERTEX_ARRAY) {
-				for (auto &[id, vao] : vao_map) {
-					std::cout << "vao_id : " << id << std::endl;
-					std::cout << vao << std::endl;
+			for (auto &surface : surfaces) {
+				std::vector<Fragment_shader_input_data> fs_data = rasterize_triangle(surface);
+
+				if (fs_data.empty()) continue;
+
+				//fragment Shade
+				std::vector<Final_shader_data> final_fragments;
+				final_fragments.reserve(fs_data.size());
+				for (auto &fragment : fs_data) {
+					final_fragments.push_back(shader->fragment_shader(fragment));
 				}
-			} else if (object == OBJECT::VERTEX_BUFFER) {
-				for (auto &[id, vbo] : vbo_map) {
-					std::cout << "vbo_id : " << id << std::endl;
-					std::cout << vbo << std::endl;
+
+				//set_pixel and test z buffer
+				for (auto &fragment : final_fragments) {
+					auto depth = fragment.depth;
+					int x = fragment.pixel_position.x(), y = fragment.pixel_position.y();
+					if (depth_test_enabled) {
+						if (sign(frame_buffer->depth_at(x, y) - depth) > 0) {
+							if (depth_update_enabled) frame_buffer->depth_at(x, y) = depth;
+							set_pixel(x, y, fragment.color, blend_enabled);
+						}
+					} else {
+						set_pixel(x, y, fragment.color, blend_enabled);
+					}
 				}
-			} else if (object == OBJECT::ELEMENT_BUFFER) {
-				for (auto &[id, ebo] : ebo_map) {
-					std::cout << "ebo_id : " << id << std::endl;
-					std::cout << ebo << std::endl;
-				}
+
 			}
+
 		}
 
 	};

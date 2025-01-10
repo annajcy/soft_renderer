@@ -2,6 +2,7 @@
 
 #include "base.h"
 #include "lerp.h"
+#include "alias.h"
 
 namespace math {
 
@@ -16,12 +17,16 @@ namespace math {
 		uint8_t r{ 255 }, g{ 255 }, b{ 255 }, a{ 255 };
 
 		Color(): r(255), g(255), b(255), a(255) { }
-		explicit Color(decimal alpha): r(255), g(255), b(255), a(255 * alpha) { }
+		explicit Color(decimal alpha): r(255), g(255), b(255), a(255 * std::min(1.0, abs(alpha))) { }
 		explicit Color(int a_): r(255), g(255), b(255), a(a_) { }
-		explicit Color(const Color_decimal& color) : r(255 * color.x()), g(255 * color.y()), b(255 * color.z()), a(255 * color.w()) { }
+		explicit Color(const Color_decimal& color) :
+		r(255 * std::min(1.0, abs(color.x()))),
+		g(255 * std::min(1.0, abs(color.y()))),
+		b(255 * std::min(1.0, abs(color.z()))),
+		a(255 * std::min(1.0, abs(color.w()))) { }
 		Color(int r_, int g_, int b_) : r(r_), g(g_), b(b_), a(255) { }
 		Color(int r_, int g_, int b_, int a_) : r(r_), g(g_), b(b_), a(a_) { }
-		Color(int r_, int g_, int b_, decimal alpha) : r(r_), g(g_), b(b_), a(255 * alpha) { }
+		Color(int r_, int g_, int b_, decimal alpha) : r(r_), g(g_), b(b_), a(255 * std::min(1.0, abs(alpha))) { }
 
 		[[nodiscard]] int R() const { return r; }
 		[[nodiscard]] int G() const { return g; }
@@ -31,6 +36,8 @@ namespace math {
 		static Color red() { return {255, 0, 0}; }
 		static Color green() { return {0, 255, 0}; }
 		static Color blue() { return {0, 0, 255}; }
+		static Color black() { return {0, 0, 0}; }
+		static Color white() { return {255, 255, 255}; }
 
 		static Color alpha_blend(const Color& foreground, const Color& background) {
 			auto &[r0, g0, b0, _] = background;
@@ -76,6 +83,15 @@ namespace math {
 		Color operator*=(decimal factor) {
 			this->a *= factor;
 			return *this;
+		}
+
+		[[nodiscard]] Color_decimal to_color_decimal() const {
+			return Color_decimal {
+					r / 255.0,
+					g / 255.0,
+					b / 255.0,
+					a / 255.0,
+			};
 		}
 
 		friend std::ostream& operator<<(std::ostream& os, const Color& color) {
