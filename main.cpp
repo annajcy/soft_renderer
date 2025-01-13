@@ -5,6 +5,7 @@
 #include "base.h"
 #include "camera.h"
 #include "mesh.h"
+#include "curve/curve.h"
 
 using namespace application;
 using namespace raster;

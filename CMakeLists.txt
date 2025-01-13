@@ -16,6 +16,7 @@ include_directories( framework )
 include_directories( rendering )
 include_directories( mesh )
 include_directories( utils )
+include_directories( curve )
 
 file(GLOB copy_resources "assets")
 file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
