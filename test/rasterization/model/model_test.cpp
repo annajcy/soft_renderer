@@ -46,7 +46,7 @@ auto al = std::make_shared<Ambient_light> (math::Color::white(), math::Vector3d 
 
 auto lighting = std::make_shared<Lighting>(
 		std::vector<std::shared_ptr<Light>> {
-			pl1, pl2, dl1, dl2, al
+				pl1, pl2, dl1, dl2, al
 		}
 );
 

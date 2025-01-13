@@ -7,6 +7,7 @@
 #include "mesh.h"
 
 namespace raster {
+	using namespace gpu;
 
 	enum CULL_TYPE {
 		FRONT,
@@ -16,6 +17,7 @@ namespace raster {
 
 	class Rasterizer
 	{
+
 	private:
 		static Rasterizer* instance;
 

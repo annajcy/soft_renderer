@@ -7,7 +7,7 @@
 #include "event_center.h"
 
 namespace rendering {
-	enum CAMERA_MODE{
+	enum CAMERA_MOVE_MODE{
 		TRANSLATE,
 		ROTATE
 	};
@@ -19,7 +19,7 @@ namespace rendering {
 
 			Event_center<void>::get_instance()->register_event("key_w_down",
 					[&](){
-						if (this->mode == CAMERA_MODE::TRANSLATE) {
+						if (this->mode == CAMERA_MOVE_MODE::TRANSLATE) {
 							std::cout << "translated up" << std::endl;
 							translate(up(), translate_sensitivity);
 						}
@@ -27,7 +27,7 @@ namespace rendering {
 
 			Event_center<void>::get_instance()->register_event("key_s_down",
 					[&](){
-						if (this->mode == CAMERA_MODE::TRANSLATE) {
+						if (this->mode == CAMERA_MOVE_MODE::TRANSLATE) {
 							std::cout << "translated down" << std::endl;
 							translate(down(), translate_sensitivity);
 						}
@@ -35,7 +35,7 @@ namespace rendering {
 
 			Event_center<void>::get_instance()->register_event("key_a_down",
 					[&](){
-						if (this->mode == CAMERA_MODE::TRANSLATE) {
+						if (this->mode == CAMERA_MOVE_MODE::TRANSLATE) {
 							std::cout << "translated left" << std::endl;
 							translate(left(), translate_sensitivity);
 						}
@@ -43,7 +43,7 @@ namespace rendering {
 
 			Event_center<void>::get_instance()->register_event("key_d_down",
 					[&](){
-						if (this->mode == CAMERA_MODE::TRANSLATE) {
+						if (this->mode == CAMERA_MOVE_MODE::TRANSLATE) {
 							std::cout << "translated right" << std::endl;
 							translate(right(), translate_sensitivity);
 						}
@@ -51,7 +51,7 @@ namespace rendering {
 
 			Event_center<void>::get_instance()->register_event("key_z_down",
 					[&](){
-						if (this->mode == CAMERA_MODE::TRANSLATE) {
+						if (this->mode == CAMERA_MOVE_MODE::TRANSLATE) {
 							std::cout << "translated front" << std::endl;
 							translate(front(), translate_sensitivity);
 						}
@@ -59,7 +59,7 @@ namespace rendering {
 
 			Event_center<void>::get_instance()->register_event("key_x_down",
 					[&](){
-						if (this->mode == CAMERA_MODE::TRANSLATE) {
+						if (this->mode == CAMERA_MOVE_MODE::TRANSLATE) {
 							std::cout << "translated back" << std::endl;
 							translate(back(), translate_sensitivity);
 						}
@@ -67,7 +67,7 @@ namespace rendering {
 
 			Event_center<void, std::pair<int, int>, std::pair<decimal, decimal>>::get_instance()->register_event("on_mouse_move",
 					[&](std::pair<int, int> pos, std::pair<decimal, decimal> delta){
-						if (this->mode == CAMERA_MODE::ROTATE) {
+						if (this->mode == CAMERA_MOVE_MODE::ROTATE) {
 							std::cout << "rotated " << delta.first << ' ' << delta.second << std::endl;
 							rotate(delta.first, delta.second);
 						}
@@ -75,13 +75,13 @@ namespace rendering {
 
 			Event_center<void, std::pair<int, int>, std::pair<decimal, decimal>>::get_instance()->register_event("on_mouse_left_button_up",
 					[&](std::pair<int, int> pos, std::pair<decimal, decimal> delta){
-						this->mode = CAMERA_MODE::TRANSLATE;
+						this->mode = CAMERA_MOVE_MODE::TRANSLATE;
 						std::cout << "mode changed: translate" << std::endl;
 					});
 
 			Event_center<void, std::pair<int, int>, std::pair<decimal, decimal>>::get_instance()->register_event("on_mouse_left_button_down",
 					[&](std::pair<int, int> pos, std::pair<decimal, decimal> delta){
-						this->mode = CAMERA_MODE::ROTATE;
+						this->mode = CAMERA_MOVE_MODE::ROTATE;
 						std::cout << "mode changed: rotate" << std::endl;
 					});
 
@@ -106,7 +106,7 @@ namespace rendering {
 		math::Vector3d origin_front{};
 		math::Vector3d top{};
 
-		CAMERA_MODE mode = CAMERA_MODE::TRANSLATE;
+		CAMERA_MOVE_MODE mode = CAMERA_MOVE_MODE::TRANSLATE;
 
 		Camera() = default;
 		Camera(decimal fov_, decimal aspect_ratio_, decimal near_, decimal far_, math::Point3d  front_, math::Point3d  top_, math::Point3d  position_) :
@@ -163,20 +163,16 @@ namespace rendering {
 			return -up();
 		}
 
-		math::Point3d position() {
+		[[nodiscard]] math::Point3d position() const {
 			return { origin_position.x() + delta_x, origin_position.y() + delta_y, origin_position.z() + delta_z };
 		}
 
-		math::Transform3d get_view_matrix() {
+		[[nodiscard]] math::Transform3d get_view_matrix() const {
 			return math::view(front(), top, position());
 		}
 
 		[[nodiscard]] math::Transform3d get_projection_matrix() const {
 			return math::projection_perspective(fov, aspect_ratio, near, far);
-		}
-
-		math::Transform3d get_view_projection_matrix() {
-			return get_projection_matrix() * get_view_matrix();
 		}
 
 	};
