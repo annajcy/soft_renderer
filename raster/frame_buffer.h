@@ -2,7 +2,7 @@
 
 #include "base.h"
 
-namespace gpu {
+namespace raster {
 	// format of BGR frame buffer
 	class Frame_buffer {
 	public:

@@ -6,7 +6,7 @@
 #include "camera.h"
 #include "rendering.h"
 
-namespace gpu {
+namespace raster {
 
 	struct Vertex_shader_input_data {
 		math::Point3d position{};

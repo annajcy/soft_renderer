@@ -1,6 +1,6 @@
 #include "base.h"
 #include "application.h"
-#include "gpu.h"
+#include "rasterizer.h"
 #include "raster.h"
 #include "maths.h"
 #include "color.h"

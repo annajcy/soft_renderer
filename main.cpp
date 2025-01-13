@@ -1,13 +1,12 @@
 #include "application.h"
-#include "gpu.h"
-#include "raster.h"
+#include "rasterizer.h"
 #include "maths.h"
 #include "base.h"
 #include "camera.h"
 #include "mesh.h"
 
 using namespace application;
-using namespace gpu;
+using namespace raster;
 using namespace rendering;
 using namespace mesh;
 
@@ -62,19 +61,19 @@ void render() {
 			lighting,
 			textures);
 
-    GPU::get_instance()->set_shader(blinn_phong_Shader);
-	GPU::get_instance()->draw_model(model);
+	Rasterizer::get_instance()->set_shader(blinn_phong_Shader);
+	Rasterizer::get_instance()->draw_model(model);
 
 }
 
 int main()
 {
-	GPU::get_instance()->init(width, height);
-	Application::get_instance()->init(width, height, app_id, GPU::get_instance()->color_buffer_raw());
+	Rasterizer::get_instance()->init(width, height);
+	Application::get_instance()->init(width, height, app_id, Rasterizer::get_instance()->color_buffer_raw());
 	Application::get_instance()->delta_time = 0;
 
 	while (Application::get_instance()->active) {
-		GPU::get_instance()->clear();
+		Rasterizer::get_instance()->clear();
 
 		render();
 
