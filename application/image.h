@@ -100,6 +100,14 @@ namespace application {
 			return data[y * width + x];
 		}
 
+		[[nodiscard]] math::Color at_uv_bilinear_du(decimal u, decimal v, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) {
+			return at_uv_bilinear(u + 1.0 / width, v, wrap_mode);
+		}
+
+		[[nodiscard]] math::Color at_uv_bilinear_dv(decimal u, decimal v, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) {
+			return at_uv_bilinear(u, v + 1.0 / height, wrap_mode);
+		}
+
 		[[nodiscard]] math::Color at_uv_bilinear(decimal u, decimal v, WRAP_MODE wrap_mode = WRAP_MODE::REPEAT) const {
 
 			if (wrap_mode == WRAP_MODE::REPEAT) {

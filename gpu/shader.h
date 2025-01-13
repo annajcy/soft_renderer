@@ -118,7 +118,11 @@ namespace gpu {
 		std::shared_ptr<rendering::Lighting> lighting { nullptr };
 		std::shared_ptr<rendering::Texture_set> textures {nullptr };
 
-		//Variable
+		const int kp = 50;
+		const decimal ka = 0.01, kd = 1.0, ks = 0.7937;
+
+		bool use_displacement_texture = true;
+		const decimal kh = 2.0, kn = 1.0;
 
 		Blinn_Phong_Shader(
 				math::Transform3d &&model_,
@@ -173,11 +177,40 @@ namespace gpu {
 			output.pixel_position = input.pixel_position;
 			output.depth = abs(input.depth);
 
-			auto main_texture_val = to_vector(textures->get_texture("main")->at_uv_bilinear(input.uv.x(), input.uv.y()).to_color_decimal());
+			auto color_tex = [&](decimal u, decimal v) {
+				return to_vector(textures->get_texture("main")->at_uv_bilinear(u, v).to_color_decimal());
+			};
 
-			decimal ka = 0.005, kd = 1.0, ks = 0.7937;
-			int kp = 50;
-			
+			auto height_tex = [&](decimal u, decimal v) {
+				return to_vector(textures->get_texture("height")->at_uv_bilinear(u, v).to_color_decimal());
+			};
+
+			auto height_tex_du = [&](decimal u, decimal v) {
+				return to_vector(textures->get_texture("height")->at_uv_bilinear_du(u, v).to_color_decimal());
+			};
+
+			auto height_tex_dv = [&](decimal u, decimal v) {
+				return to_vector(textures->get_texture("height")->at_uv_bilinear_dv(u, v).to_color_decimal());
+			};
+
+			auto color_tex_val = color_tex(input.uv.x(), input.uv.y());
+			auto height_tex_val = height_tex(input.uv.x(), input.uv.y());
+
+			auto normal = input.view_normal;
+			auto position = input.view_position;
+
+			if (use_displacement_texture) {
+				auto du = kh * kn * (height_tex_du(input.uv.x(), input.uv.y()).norm() - height_tex_val.norm());
+				auto dv = kh * kn * (height_tex_dv(input.uv.x(), input.uv.y()).norm() - height_tex_val.norm());
+
+				auto binormal = cross(input.view_normal, input.view_tangent);
+				auto tbn = math::Mat3x3::to_matrix(std::vector<math::Vector3d>{input.view_tangent, binormal, input.view_normal});
+				auto local_normal = math::Vector3d {-du, -dv, 1.0}.normalize();
+
+				normal = (tbn * local_normal).normalize();
+				position = input.view_position + kn * normal * height_tex_val.norm();
+			}
+
 			math::Vector3d color{};
 
 			for (auto &al : lighting->get_lights<rendering::Ambient_light>()) {
@@ -185,24 +218,24 @@ namespace gpu {
 			}
 
 			for (auto &pl : lighting->get_lights<rendering::Point_light>()) {
-				auto view_direction = input.view_position.normalize();
-				auto light_direction = (input.view_position - pl->origin).normalize();
+				auto view_direction = position.normalize();
+				auto light_direction = (position - pl->origin).normalize();
 				auto half_direction = (view_direction + light_direction).normalize();
-				auto distance = input.view_position.norm();
+				auto distance = position.norm();
 
-				auto diffuse = kd * main_texture_val * pl->propagate(distance) * std::max(0.0, input.view_normal.dot(light_direction));
-				auto specular = ks * pl->propagate(distance) * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
+				auto diffuse = kd * color_tex_val * pl->propagate(distance) * std::max(0.0, normal.dot(light_direction));
+				auto specular = ks * pl->propagate(distance) * std::max(0.0, std::pow(normal.dot(half_direction), kp));
 
 				color += diffuse + specular;
 			}
 
 			for (auto &dl : lighting->get_lights<rendering::Directional_light>()) {
-				auto view_direction = input.view_position.normalize();
+				auto view_direction = position.normalize();
 				auto light_direction = dl->direction.normalize();
 				auto half_direction = (view_direction + light_direction).normalize();
 
-				auto diffuse = kd * main_texture_val * dl->propagate() * std::max(0.0, input.view_normal.dot(light_direction));
-				auto specular = ks * dl->propagate() * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
+				auto diffuse = kd * color_tex_val * dl->propagate() * std::max(0.0, normal.dot(light_direction));
+				auto specular = ks * dl->propagate() * std::max(0.0, std::pow(normal.dot(half_direction), kp));
 
 				color += diffuse + specular;
 			}

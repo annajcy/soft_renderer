@@ -38,15 +38,16 @@ auto camera = std::make_shared<Camera>(
 		math::Vector3d {0.0, 0.0, -camera_z}
 );
 
-auto pl1 = std::make_shared<Point_light>(math::Color::white(), math::Vector3d {50, 50, 50}, math::Point3d {10.0, 10.0, 10.0});
-auto pl2 = std::make_shared<Point_light>(math::Color::white(), math::Vector3d {50, 50, 50}, math::Point3d {-10.0, 10.0, 10.0});
+auto pl1 = std::make_shared<Point_light>(math::Color::red(), math::Vector3d {50, 50, 50}, math::Point3d {10.0, 10.0, 10.0});
+auto pl2 = std::make_shared<Point_light>(math::Color::green(), math::Vector3d {50, 50, 50}, math::Point3d {-10.0, 10.0, 10.0});
+auto pl3 = std::make_shared<Point_light>(math::Color::blue(), math::Vector3d {50, 50, 50}, math::Point3d {0.0, 10.0, 10.0});
 auto dl1 = std::make_shared<Directional_light>(math::Color::white(), math::Vector3d {0.5, 0.5, 0.5}, math::Point3d {1.0, 1.0, 1.0});
 auto dl2 = std::make_shared<Directional_light>(math::Color::white(), math::Vector3d {0.5, 0.5, 0.5}, math::Point3d {-1.0, 1.0, 1.0});
 auto al = std::make_shared<Ambient_light> (math::Color::white(), math::Vector3d {10, 10, 10});
 
 auto lighting = std::make_shared<Lighting>(
 		std::vector<std::shared_ptr<Light>> {
-			pl1, pl2, dl1, dl2, al
+			pl1, pl2, pl3, dl1, dl2, al
 		}
 );
 
