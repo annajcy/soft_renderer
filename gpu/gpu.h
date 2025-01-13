@@ -66,13 +66,8 @@ namespace gpu {
 			for (int x = left_bottom.x(); x <= right_top.x(); x ++)
 				for (int y = left_bottom.y(); y <= right_top.y(); y ++) {
 
-					std::vector<math::Point2d> sampled_points =
-							math::sample_pixel(math::Pixel{x, y}, MSAA);
-
-					int enclosed = 0;
-					for (auto &p : sampled_points)
-						if (triangle.enclose(p)) enclosed ++;
-					if(!enclosed) continue;
+					bool enclosed = triangle.enclose(math::Point2d {x, y});
+					if (!enclosed) continue;
 
 					auto barycentric = math::get_factor(pa, pb, pc, math::Point2d{x, y});
 
@@ -82,7 +77,6 @@ namespace gpu {
 
 					Fragment_shader_input_data frag{};
 
-					frag.transparency = (decimal)enclosed / (MSAA * MSAA);
 					frag.depth = interpolated_data.depth;
 					frag.base_color = interpolated_data.base_color;
 					frag.uv = interpolated_data.uv;
@@ -114,8 +108,7 @@ namespace gpu {
 		//vertices arranged clockwise represent front face
 		CULL_TYPE cull_type = CULL_TYPE::DISABLE;
 
-		int MSAA = 1;
-		bool blend_enabled = false;
+		bool blend_enabled = true;
 		bool depth_test_enabled = true;
 		bool depth_update_enabled = true;
 
@@ -186,6 +179,7 @@ namespace gpu {
 					intermediate_surface[i].perspective_divide();
 				}
 
+				//screen map
 				std::array<Intermediate_shader_data, 3> screen_surface{};
 				for (auto i : {0, 1, 2}) {
 					screen_surface[i] = screen_map(intermediate_surface[i]);
@@ -200,7 +194,7 @@ namespace gpu {
 
 				if (fs_data.empty()) continue;
 
-				//fragment Shade
+				//fragment shade
 				std::vector<Final_shader_data> final_fragments;
 				final_fragments.reserve(fs_data.size());
 				for (auto &fragment : fs_data) {
@@ -221,12 +215,8 @@ namespace gpu {
 						set_pixel(x, y, fragment.color, blend_enabled);
 					}
 				}
-
 			}
-
 		}
-
 	};
-
 }
 

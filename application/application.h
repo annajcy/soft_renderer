@@ -5,8 +5,6 @@
 
 namespace application {
 
-	#define DELTA_TIME 1
-
 	class Application
 	{
 	private:
@@ -46,6 +44,7 @@ namespace application {
 	public:
 		cv::String app_id{ "app" };
 		bool active{ false };
+		int delta_time { 0 };
 
 		void init(int width_, int height_, const std::string &app_id_ , u_int8_t* color_buffer) {
 			if (!color_buffer) throw std::invalid_argument("invalid frame buffer");
@@ -66,7 +65,7 @@ namespace application {
 		}
 
 		void handle_message() {
-			auto key = cv::waitKey(DELTA_TIME);
+			auto key = cv::waitKey(delta_time);
 			if (key == 'q') {
 				Event_center<void>::get_instance()->trigger_event("quit");
 			} else if (key == 'w') {

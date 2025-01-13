@@ -38,16 +38,15 @@ auto camera = std::make_shared<Camera>(
 		math::Vector3d {0.0, 0.0, -camera_z}
 );
 
+auto pl1 = std::make_shared<Point_light>(math::Color::white(), math::Vector3d {50, 50, 50}, math::Point3d {10.0, 10.0, 10.0});
+auto pl2 = std::make_shared<Point_light>(math::Color::white(), math::Vector3d {50, 50, 50}, math::Point3d {-10.0, 10.0, 10.0});
+auto dl1 = std::make_shared<Directional_light>(math::Color::white(), math::Vector3d {0.5, 0.5, 0.5}, math::Point3d {1.0, 1.0, 1.0});
+auto dl2 = std::make_shared<Directional_light>(math::Color::white(), math::Vector3d {0.5, 0.5, 0.5}, math::Point3d {-1.0, 1.0, 1.0});
+auto al = std::make_shared<Ambient_light> (math::Color::white(), math::Vector3d {10, 10, 10});
+
 auto lighting = std::make_shared<Lighting>(
-		std::vector<Point_light> {
-			Point_light{math::Color::white(), {10.0, 10.0, 10.0}, {500, 500, 500}},
-			Point_light{math::Color::white(), {-10.0, 10.0, 10.0}, {500, 500, 500}},
-		},
-		std::vector<Directional_light> {
-			Directional_light(math::Color::white(), {1.0, 1.0, 1.0}, {500, 500, 500})
-		},
-		std::vector<Ambient_light> {
-			Ambient_light {math::Color::white(), {10, 10, 10}}
+		std::vector<std::shared_ptr<Light>> {
+			pl1, pl2, dl1, dl2, al
 		}
 );
 
@@ -55,10 +54,13 @@ void render() {
 	angle += 0.2;
 
 	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle) * math::scale(2.5, 2.5, 2.5);
-	auto view_mat = camera->get_view_matrix();
-	auto projection_mat = camera->get_projection_matrix();
-
-	auto blinn_phong_Shader = std::make_shared<Blinn_Phong_Shader>(model_mat, view_mat, projection_mat, camera, lighting, textures);
+	auto blinn_phong_Shader = std::make_shared<Blinn_Phong_Shader>(
+			model_mat,
+			camera->get_view_matrix(),
+			camera->get_projection_matrix(),
+			camera,
+			lighting,
+			textures);
 
     GPU::get_instance()->set_shader(blinn_phong_Shader);
 	GPU::get_instance()->draw_model(model);
@@ -69,6 +71,7 @@ int main()
 {
 	GPU::get_instance()->init(width, height);
 	Application::get_instance()->init(width, height, app_id, GPU::get_instance()->color_buffer_raw());
+	Application::get_instance()->delta_time = 0;
 
 	while (Application::get_instance()->active) {
 		GPU::get_instance()->clear();

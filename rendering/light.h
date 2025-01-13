@@ -67,22 +67,19 @@ namespace rendering {
 	};
 
 	struct Lighting {
-		std::vector<Point_light> point_lights{};
-		std::vector<Directional_light> directional_lights{};
-		std::vector<Ambient_light> ambient_lights{};
-		Lighting() = default;
-		Lighting(const std::vector<Point_light> &point_lights_,
-				const std::vector<Directional_light> &directional_lights_,
-				const std::vector<Ambient_light> &ambient_lights_) :
-				point_lights(point_lights_),
-				directional_lights(directional_lights_),
-				ambient_lights(ambient_lights_) { }
+		std::vector<std::shared_ptr<Light>> lights{};
+		explicit Lighting(const std::vector<std::shared_ptr<Light>> &lights_) : lights(lights_) {}
+		explicit Lighting(std::vector<std::shared_ptr<Light>> &&lights_) : lights(std::move(lights_)) {}
 
-		Lighting(std::vector<Point_light> &&point_lights_,
-				 std::vector<Directional_light> &&directional_lights_,
-				 std::vector<Ambient_light> &&ambient_lights_) :
-				point_lights(std::move(point_lights_)),
-				directional_lights(std::move(directional_lights_)),
-				ambient_lights(std::move(ambient_lights_)) { }
+		template<typename T>
+		std::vector<std::shared_ptr<T>> get_lights() requires Inherited<Light, T> {
+			std::vector<std::shared_ptr<T>> result{};
+			for (auto &l : lights) {
+				auto light_ptr = l->get_ptr<T>();
+				if (light_ptr != nullptr)
+					result.push_back(light_ptr);
+			}
+			return result;
+		}
 	};
 }

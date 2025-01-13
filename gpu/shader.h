@@ -176,38 +176,38 @@ namespace gpu {
 			auto main_texture_val = to_vector(textures->get_texture("main")->at_uv_bilinear(input.uv.x(), input.uv.y()).to_color_decimal());
 
 			decimal ka = 0.005, kd = 1.0, ks = 0.7937;
-			int kp = 100;
+			int kp = 50;
 			
 			math::Vector3d color{};
 
-			for (auto &al : lighting->ambient_lights) {
-				color += ka * al.propagate();
+			for (auto &al : lighting->get_lights<rendering::Ambient_light>()) {
+				color += ka * al->propagate();
 			}
 
-			for (auto &pl : lighting->point_lights) {
+			for (auto &pl : lighting->get_lights<rendering::Point_light>()) {
 				auto view_direction = input.view_position.normalize();
-				auto light_direction = (input.view_position - pl.origin).normalize();
+				auto light_direction = (input.view_position - pl->origin).normalize();
 				auto half_direction = (view_direction + light_direction).normalize();
 				auto distance = input.view_position.norm();
-				
-				auto diffuse = kd * main_texture_val * pl.propagate(distance) * std::max(0.0, input.view_normal.dot(light_direction));
-				auto specular = ks * pl.propagate(distance) * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
-				
+
+				auto diffuse = kd * main_texture_val * pl->propagate(distance) * std::max(0.0, input.view_normal.dot(light_direction));
+				auto specular = ks * pl->propagate(distance) * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
+
 				color += diffuse + specular;
 			}
 
-			for (auto &dl : lighting->directional_lights) {
+			for (auto &dl : lighting->get_lights<rendering::Directional_light>()) {
 				auto view_direction = input.view_position.normalize();
-				auto light_direction = dl.direction.normalize();
+				auto light_direction = dl->direction.normalize();
 				auto half_direction = (view_direction + light_direction).normalize();
 
-				auto diffuse = kd * main_texture_val * dl.propagate() * std::max(0.0, input.view_normal.dot(light_direction));
-				auto specular = ks * dl.propagate() * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
-				
+				auto diffuse = kd * main_texture_val * dl->propagate() * std::max(0.0, input.view_normal.dot(light_direction));
+				auto specular = ks * dl->propagate() * std::max(0.0, std::pow(input.view_normal.dot(half_direction), kp));
+
 				color += diffuse + specular;
 			}
 
-			output.color = math::Color(math::Color_decimal {color.x(), color.y(), color.z(), input.transparency});
+			output.color = math::Color(math::Color_decimal {color.x(), color.y(), color.z(), 1.0});
 			return output;
 		}
 	};
