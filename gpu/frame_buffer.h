@@ -3,46 +3,26 @@
 #include "base.h"
 
 namespace gpu {
-	// format of BGR frame buffer
-	class Frame_buffer {
-	public:
-		int width{ 0 };
-		int height{ 0 };
 
-		std::shared_ptr<math::BGR[]> color_buffer{ nullptr }; // Use shared_ptr
-		std::shared_ptr<decimal[]> depth_buffer{ nullptr };   // Use shared_ptr
+	template<typename T>
+	struct Buffer {
+		int width{};
+		int height{};
+		T default_value{};
+		std::shared_ptr<T[]> data{ nullptr }; // Use shared_ptr
 
-		Frame_buffer() = default;
+		void init(int width_, int height_, T default_value_) {
+			width = width_;
+			height = height_;
+			default_value = default_value_;
 
-		Frame_buffer(int width_, int height_) : width(width_), height(height_) {
-			color_buffer = std::shared_ptr<math::BGR[]>(new math::BGR[width_ * height_]);
-			depth_buffer = std::shared_ptr<decimal[]>(new decimal[width_ * height_]);
-			std::fill_n(depth_buffer.get(), width_ * height_, std::numeric_limits<double>::infinity());
+			// Allocate the array with std::shared_ptr using a custom deleter
+			data = std::shared_ptr<T[]>(new T[width_ * height_], std::default_delete<T[]>());
+			std::fill_n(data.get(), width * height, default_value);
 		}
 
-		void clear() const {
-			std::fill_n(depth_buffer.get(), width * height, std::numeric_limits<double>::infinity());
-			memset(color_buffer.get(), 0, width * height * sizeof(math::BGR));
-		}
-
-		[[nodiscard]] decimal& depth_at(int x, int y) {
-			if (!is_valid(x, y)) throw std::out_of_range("out of range");
-			return depth_buffer.get()[y * width + x];
-		}
-
-		[[nodiscard]] decimal depth_at(int x, int y) const {
-			if (!is_valid(x, y)) throw std::out_of_range("out of range");
-			return depth_buffer.get()[y * width + x];
-		}
-
-		[[nodiscard]] math::BGR& color_at(int x, int y) {
-			if (!is_valid(x, y)) throw std::out_of_range("out of range");
-			return color_buffer.get()[(height - 1 - y) * width + x];
-		}
-
-		[[nodiscard]] math::BGR color_at(int x, int y) const {
-			if (!is_valid(x, y)) throw std::out_of_range("out of range");
-			return color_buffer.get()[(height - 1 - y) * width + x];
+		void clear() {
+			std::fill_n(data.get(), width * height, default_value);
 		}
 
 		[[nodiscard]] bool is_valid(int x, int y) const {
@@ -51,7 +31,21 @@ namespace gpu {
 			return true;
 		}
 
+		[[nodiscard]] T& at(int x, int y) {
+			if (!is_valid(x, y)) throw std::out_of_range("out of range");
+			return data[y * width + x];
+		}
+
+		[[nodiscard]] T at(int x, int y) const {
+			if (!is_valid(x, y)) throw std::out_of_range("out of range");
+			return data[y * width + x];
+		}
+
+		Buffer() = default;
 	};
+
+	using Color_buffer = Buffer<math::BGR>;
+	using Depth_buffer = Buffer<decimal>;
 
 }
 

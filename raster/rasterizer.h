@@ -5,6 +5,7 @@
 #include "frame_buffer.h"
 #include "shader.h"
 #include "mesh.h"
+#include "gpu.h"
 
 namespace raster {
 	using namespace gpu;
@@ -15,15 +16,13 @@ namespace raster {
 		DISABLE
 	};
 
-	class Rasterizer
+	class Rasterizer : public GPU
 	{
 
 	private:
 		static Rasterizer* instance;
-
-		std::shared_ptr<Frame_buffer> frame_buffer{ nullptr };
-		std::shared_ptr<Shader> shader{ nullptr };
-
+		std::shared_ptr<Shader> shader{};
+		std::shared_ptr<Depth_buffer> depth_buffer{};
 		Rasterizer() = default;
 
 		[[nodiscard]] bool cull(const std::array<Intermediate_shader_data, 3> &face) const {
@@ -46,13 +45,11 @@ namespace raster {
 
 			return true;
 		}
-
 		[[nodiscard]] Intermediate_shader_data screen_map(const Intermediate_shader_data &input) {
 			Intermediate_shader_data output = input;
 			output.position = math::screen(width(), height()) * normalize_homo_point(input.position);
 			return output;
 		}
-
 		[[nodiscard]] std::vector<Fragment_shader_input_data> rasterize_triangle(const std::array<Intermediate_shader_data, 3> &input) const {
 
 			std::vector<Fragment_shader_input_data> output{};
@@ -112,35 +109,17 @@ namespace raster {
 		bool depth_test_enabled = true;
 		bool depth_update_enabled = true;
 
+		void init(int width, int height) override {
+			GPU::init(width, height);
+			depth_buffer = std::make_shared<Depth_buffer>();
+			depth_buffer->init(width, height, std::numeric_limits<decimal>::infinity());
+		}
+
 		static Rasterizer* get_instance() {
 			if (instance == nullptr) {
 				instance = new Rasterizer();
 			}
 			return instance;
-		}
-
-		void init(int width, int height) { frame_buffer = std::make_shared<Frame_buffer>(width, height); }
-		int height() { return frame_buffer->height; }
-		int width() { return frame_buffer->width; }
-		void clear() { frame_buffer->clear(); }
-
-		u_int8_t* color_buffer_raw() {
-			return reinterpret_cast<u_int8_t*>(frame_buffer->color_buffer.get());
-		}
-
-		//the color format of opencv is BGR
-		void set_pixel(int x, int y, const math::Color& color, bool blend = true) {
-			if (x < 0 || x >= width()) return;
-			if (y < 0 || y >= height()) return;
-			auto& pixel = frame_buffer->color_at(x, y);
-			if (blend) {
-				math::Color background_color(pixel.r, pixel.g, pixel.b);
-				auto [r, g, b, _] = math::Color::alpha_blend(color, background_color);
-				pixel = {b, g, r};
-			} else {
-				auto [r, g, b, _] = color;
-				pixel = {b, g, r};
-			}
 		}
 
 		template<typename T>
@@ -205,10 +184,10 @@ namespace raster {
 				for (auto &fragment : final_fragments) {
 					auto depth = fragment.depth;
 					int x = fragment.pixel_position.x(), y = fragment.pixel_position.y();
-					if (!frame_buffer->is_valid(x, y)) continue;
+					if (!depth_buffer->is_valid(x, y)) continue;
 					if (depth_test_enabled) {
-						if (sign(frame_buffer->depth_at(x, y) - depth) > 0) {
-							if (depth_update_enabled) frame_buffer->depth_at(x, y) = depth;
+						if (sign(depth_buffer->at(x, y) - depth) > 0) {
+							if (depth_update_enabled) depth_buffer->at(x, y) = depth;
 							set_pixel(x, y, fragment.color, blend_enabled);
 						}
 					} else {
@@ -274,7 +253,6 @@ namespace raster {
 					p.y() = -p.y();
 			}
 		}
-
 	};
 }
 

@@ -10,6 +10,10 @@ namespace math {
 		u_int8_t b{ 0 }, g{ 0 }, r{ 0 };
 		BGR() = default;
 		BGR(u_int8_t b_, u_int8_t g_, u_int8_t r_) : b(b_), g(g_), r(r_) { }
+
+		static BGR zero() {
+			return BGR {0, 0, 0};
+		}
 	};
 
 	struct Color  {
