@@ -14,7 +14,7 @@ namespace gpu {
 		[[nodiscard]] int height() const { return color_buffer->height; }
 		[[nodiscard]] int width() const { return color_buffer->width; }
 
-		void clear() { color_buffer->clear(); }
+		virtual void clear() { color_buffer->clear(); }
 
 		[[nodiscard]] u_int8_t* color_buffer_raw() {
 			return reinterpret_cast<u_int8_t*>(color_buffer->data.get());

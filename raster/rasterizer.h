@@ -45,11 +45,13 @@ namespace raster {
 
 			return true;
 		}
+
 		[[nodiscard]] Intermediate_shader_data screen_map(const Intermediate_shader_data &input) {
 			Intermediate_shader_data output = input;
 			output.position = math::screen(width(), height()) * normalize_homo_point(input.position);
 			return output;
 		}
+
 		[[nodiscard]] std::vector<Fragment_shader_input_data> rasterize_triangle(const std::array<Intermediate_shader_data, 3> &input) const {
 
 			std::vector<Fragment_shader_input_data> output{};
@@ -113,6 +115,11 @@ namespace raster {
 			GPU::init(width, height);
 			depth_buffer = std::make_shared<Depth_buffer>();
 			depth_buffer->init(width, height, std::numeric_limits<decimal>::infinity());
+		}
+
+		void clear() override {
+			GPU::clear();
+			depth_buffer->clear();
 		}
 
 		static Rasterizer* get_instance() {

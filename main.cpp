@@ -5,7 +5,7 @@
 #include "base.h"
 #include "camera.h"
 #include "mesh.h"
-#include "curve/curve.h"
+#include "curve.h"
 
 using namespace application;
 using namespace raster;
@@ -16,7 +16,7 @@ std::string app_id = "soft_renderer";
 int height = 700;
 int width = 700;
 
-decimal angle = -40;
+decimal angle = 40;
 decimal camera_z = 10.0;
 
 std::string model_path = "assets/obj/spot/spot_triangulated_good.obj";
@@ -73,7 +73,7 @@ int main()
 {
 	Rasterizer::get_instance()->init(width, height);
 	Application::get_instance()->init(width, height, app_id, Rasterizer::get_instance()->color_buffer_raw());
-	Application::get_instance()->delta_time = 0;
+	Application::get_instance()->delta_time = 10;
 
 	while (Application::get_instance()->active) {
 		Rasterizer::get_instance()->clear();
