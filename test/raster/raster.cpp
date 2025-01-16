@@ -10,11 +10,11 @@
 #include "raytracer.h"
 
 using namespace application;
-using namespace raytrace;
+using namespace raster;
 using namespace rendering;
 using namespace mesh;
 
-using rtr = Singleton<Raytracer>;
+using rst = Singleton<Rasterizer>;
 using app = Singleton<Application>;
 
 std::string app_id = "soft_renderer";
@@ -53,7 +53,7 @@ auto al = std::make_shared<Ambient_light> (math::Color::white(), math::Vector3d 
 
 auto lighting = std::make_shared<Lighting>(
 		std::vector<std::shared_ptr<Light>> {
-			pl1, pl2, pl3, dl1, dl2, al
+				pl1, pl2, pl3, dl1, dl2, al
 		}
 );
 
@@ -69,18 +69,18 @@ void render() {
 			lighting,
 			textures);
 
-	rtr::get_instance()->set_shader(blinn_phong_Shader);
-	rtr::get_instance()->draw_model(model);
+	rst::get_instance()->set_shader(blinn_phong_Shader);
+	rst::get_instance()->draw_model(model);
 }
 
 int main()
 {
-	rtr::get_instance()->init(width, height);
-	app::get_instance()->init(width, height, app_id, rtr::get_instance()->color_buffer_raw());
-	app::get_instance()->delta_time = 0;
+	rst::get_instance()->init(width, height);
+	app::get_instance()->init(width, height, app_id, rst::get_instance()->color_buffer_raw());
+	app::get_instance()->delta_time = 10;
 
 	while (app::get_instance()->active) {
-		rtr::get_instance()->clear();
+		rst::get_instance()->clear();
 
 		render();
 
@@ -92,4 +92,3 @@ int main()
 
 	return 0;
 }
-

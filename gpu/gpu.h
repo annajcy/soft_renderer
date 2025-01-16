@@ -1,20 +1,25 @@
 #pragma once
 
+#include "buffer.h"
+#include "shader_raster.h"
+
 namespace gpu {
 
 	struct GPU {
 
 		std::shared_ptr<Color_buffer> color_buffer{};
 
+		[[nodiscard]] int height() const { return color_buffer->height; }
+		[[nodiscard]] int width() const { return color_buffer->width; }
+
 		virtual void init(int width, int height) {
 			color_buffer = std::make_shared<Color_buffer>();
 			color_buffer->init(width, height, math::BGR::zero());
 		}
 
-		[[nodiscard]] int height() const { return color_buffer->height; }
-		[[nodiscard]] int width() const { return color_buffer->width; }
-
 		virtual void clear() { color_buffer->clear(); }
+
+		virtual void draw_model(const std::shared_ptr<mesh::Model> &model) = 0;
 
 		[[nodiscard]] u_int8_t* color_buffer_raw() {
 			return reinterpret_cast<u_int8_t*>(color_buffer->data.get());

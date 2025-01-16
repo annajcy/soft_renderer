@@ -2,8 +2,8 @@
 
 #include "base.h"
 #include "color.h"
-#include "frame_buffer.h"
-#include "shader.h"
+#include "buffer.h"
+#include "shader_raster.h"
 #include "mesh.h"
 #include "gpu.h"
 
@@ -20,10 +20,9 @@ namespace raster {
 	{
 
 	private:
-		static Rasterizer* instance;
-		std::shared_ptr<Shader> shader{};
+
 		std::shared_ptr<Depth_buffer> depth_buffer{};
-		Rasterizer() = default;
+		std::shared_ptr<Shader> shader{};
 
 		[[nodiscard]] bool cull(const std::array<Intermediate_shader_data, 3> &face) const {
 			//if triangle is faced backward, then discard
@@ -103,13 +102,18 @@ namespace raster {
 
 
 	public:
-
+		Rasterizer() = default;
 		//vertices arranged clockwise represent front face
 		CULL_TYPE cull_type = CULL_TYPE::DISABLE;
 
 		bool blend_enabled = true;
 		bool depth_test_enabled = true;
 		bool depth_update_enabled = true;
+
+		template<typename T>
+		void set_shader(const std::shared_ptr<T> shader_) requires Inherited<Shader, typename std::remove_reference<T>::type> {
+			shader = shader_;
+		}
 
 		void init(int width, int height) override {
 			GPU::init(width, height);
@@ -122,19 +126,7 @@ namespace raster {
 			depth_buffer->clear();
 		}
 
-		static Rasterizer* get_instance() {
-			if (instance == nullptr) {
-				instance = new Rasterizer();
-			}
-			return instance;
-		}
-
-		template<typename T>
-		void set_shader(const std::shared_ptr<T> shader_) requires Inherited<Shader, typename std::remove_reference<T>::type> {
-			shader = shader_;
-		}
-
-		void draw_model(const std::shared_ptr<mesh::Model> &model) {
+		void draw_model(const std::shared_ptr<mesh::Model> &model) override {
 
 			std::vector<std::array<Intermediate_shader_data, 3>> surfaces;
 

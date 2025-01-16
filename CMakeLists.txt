@@ -17,21 +17,13 @@ include_directories( rendering )
 include_directories( mesh )
 include_directories( utils )
 include_directories( curve )
+include_directories( data_structure )
 
 file(GLOB copy_resources "assets")
 file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
 
-add_subdirectory(application)
-add_subdirectory(raster)
-add_subdirectory(framework)
-add_subdirectory(raytrace)
-
 # soft_renderer
 add_executable(soft_renderer main.cpp)
 target_link_libraries( soft_renderer ${OpenCV_LIBS} )
-target_link_libraries( soft_renderer application_lib )
-target_link_libraries( soft_renderer framework_lib )
-target_link_libraries( soft_renderer raster_lib )
-target_link_libraries( soft_renderer raytrace_lib)
 
 

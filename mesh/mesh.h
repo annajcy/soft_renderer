@@ -30,7 +30,7 @@ namespace mesh {
 		std::vector<math::Vector3d> normals{};
 		std::vector<Face_ref> face_refs{};
 
-		explicit Model(const std::string &filename) : face_refs(3) {
+		explicit Model(const std::string &filename) {
 			std::ifstream file(filename);
 
 			if (!file.is_open()) {
@@ -88,6 +88,7 @@ namespace mesh {
 		[[nodiscard]] size_t face_count() const {
 			return face_refs.size();
 		}
+
 	};
 
 }

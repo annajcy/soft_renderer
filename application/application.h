@@ -5,11 +5,11 @@
 
 namespace application {
 
+	using namespace framework;
+
 	class Application
 	{
 	private:
-		static Application* instance;
-
 		cv::Mat canvas{ };
 		u_int8_t* canvas_buffer{ nullptr };
 		int width{ 0 };
@@ -18,8 +18,6 @@ namespace application {
 		static decimal mouse_sensitivity;
 		static int mouse_current_x;
 		static int mouse_current_y;
-
-		Application() = default;
 
 		static void mouse_callback(int event, int x, int y, int flags, void* userdata) {
 			if (event == cv::EVENT_MOUSEMOVE) {
@@ -42,6 +40,7 @@ namespace application {
 		}
 
 	public:
+		Application() = default;
 		cv::String app_id{ "app" };
 		bool active{ false };
 		int delta_time { 0 };
@@ -55,13 +54,6 @@ namespace application {
 			cv::resizeWindow(app_id, width, height);
 			cv::setMouseCallback(app_id, mouse_callback, nullptr);
 			register_events();
-		}
-
-		static Application* get_instance() {
-			if (instance == nullptr) {
-				instance = new Application();
-			}
-			return instance;
 		}
 
 		void handle_message() {
@@ -93,5 +85,11 @@ namespace application {
 
 	};
 
+	decimal Application::mouse_sensitivity{ 0.1 };
+	int Application::mouse_current_x{};
+	int Application::mouse_current_y{};
+
 }
+
+
 

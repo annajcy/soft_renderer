@@ -6,81 +6,18 @@
 #include "camera.h"
 #include "rendering.h"
 
-namespace gpu {
+namespace raytrace {
 
 	struct Vertex_shader_input_data {
 		math::Point3d position{};
 		math::Vector3d normal{};
 		math::UV uv{};
-		math::Color_decimal base_color{};
 	};
 
 	struct Intermediate_shader_data {
-		math::Homo3d position{};
 		math::Point3d view_position{};
 		math::Vector3d view_normal{};
 		math::UV uv{};
-		math::Color_decimal base_color{};
-		decimal depth{};
-		decimal inv_w{};
-
-		static Intermediate_shader_data interpolate_intermediate_shader_data(
-				const Intermediate_shader_data &u,
-				const Intermediate_shader_data &v,
-				const std::pair<decimal, decimal> &factor) {
-
-			Intermediate_shader_data output{};
-
-			output.position = math::calculate_weighed(u.position, v.position, factor);
-			output.view_position = math::calculate_weighed(u.view_position, v.view_position, factor);
-			output.view_normal = math::calculate_weighed(u.view_normal, v.view_normal, factor);
-			output.base_color = math::calculate_weighed(u.base_color, v.base_color, factor);
-			output.uv = math::calculate_weighed(u.uv, v.uv, factor);
-			output.depth =  math::calculate_weighed(u.depth, v.depth, factor);
-			output.inv_w = math::calculate_weighed(u.inv_w, v.inv_w, factor);
-
-			return output;
-
-		}
-
-		static Intermediate_shader_data interpolate_intermediate_shader_data(
-				const Intermediate_shader_data &a,
-				const Intermediate_shader_data &b,
-				const Intermediate_shader_data &c,
-				const std::tuple<decimal, decimal, decimal> &barycentric) {
-
-			Intermediate_shader_data output{};
-
-			output.position = math::calculate_weighed(a.position, b.position, c.position, barycentric);
-			output.view_position = math::calculate_weighed(a.view_position, b.view_position, c.view_position, barycentric);
-			output.view_normal = math::calculate_weighed(a.view_normal, b.view_normal, c.view_normal, barycentric);
-			output.base_color = math::calculate_weighed(a.base_color, b.base_color, c.base_color, barycentric);
-			output.uv = math::calculate_weighed(a.uv, b.uv, c.uv, barycentric);
-			output.depth = math::calculate_weighed(a.depth, b.depth, c.depth, barycentric);
-			output.inv_w = math::calculate_weighed(a.inv_w, b.inv_w, c.inv_w, barycentric);
-
-			return output;
-		}
-
-		Intermediate_shader_data& perspective_divide() {
-			decimal w = position.w();
-			depth /= w;
-			inv_w /= w;
-			base_color /= w;
-			uv /= w;
-			view_normal /= w;
-			view_position /= w;
-			return *this;
-		}
-
-		Intermediate_shader_data& perspective_recover() {
-			view_position /= inv_w;
-			view_normal /= inv_w;
-			uv /= inv_w;
-			base_color /= inv_w;
-			depth /= inv_w;
-			return *this;
-		}
 	};
 
 	struct Fragment_shader_input_data {
@@ -105,7 +42,6 @@ namespace gpu {
 		virtual Intermediate_shader_data vertex_shader(const Vertex_shader_input_data& input) = 0;
 		virtual Final_shader_data fragment_shader(const Fragment_shader_input_data& input) = 0;
 	};
-
 
 	//Simple Blinn-Phong Shader
 	class Blinn_Phong_Shader : public Shader {
@@ -161,13 +97,9 @@ namespace gpu {
 			auto mvp = projection * view * model;
 			auto mv = view * model;
 
-			output.position = mvp * to_homo_point(input.position);
 			output.view_position = to_point((mv * to_homo_point(input.position)));
 			output.view_normal = to_vector((mv.transpose().inv() * to_homo_vector(input.normal))).normalize();
 			output.uv = input.uv;
-			output.base_color = input.base_color;
-			output.depth = output.view_position.z();
-			output.inv_w = 1.0;
 
 			return output;
 		}
@@ -244,7 +176,6 @@ namespace gpu {
 			return output;
 		}
 	};
-
 
 }
 

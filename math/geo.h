@@ -107,7 +107,7 @@ namespace math {
 		decimal radius{};
 
 		Sphere(const Point3d &origin_, const decimal &radius_) : origin(origin_), radius(radius_) {}
-		Sphere(Point3d &&origin_, decimal &&radius_) : origin(std::move(origin_)), radius(std::move(radius_)) {}
+		Sphere(Point3d &&origin_, decimal &&radius_) : origin(std::move(origin_)), radius(radius_) {}
 
 	};
 
@@ -118,6 +118,20 @@ namespace math {
 		Surface(const Point3d &p_, const Vector3d &normal_) : p(p_), normal(normal_) {}
 		Surface(Point3d &&p_, Vector3d &&normal_) : p(std::move(p_)), normal(std::move(normal_)) {}
 		explicit Surface(const Triangle3d &abc) : p(abc.a), normal(abc.normal()) {}
+
+		/// side_test. define side where normal points to inside
+		/// \return 1 : inside, 0 : on the surface, -1 : out side the surface
+		[[nodiscard]] int side_test(const math::Point3d& point) const {
+			return sign((point - p).dot(normal));
+		}
+
+		/// side_test for triangle
+		/// \return 1 : inside, 0 : mixed, -1 : outside the surface
+		[[nodiscard]] int side_test(const math::Triangle3d& triangle) const {
+			if (side_test(triangle.a) != -1 && side_test(triangle.b) != -1 && side_test(triangle.b) != -1 ) return 1;
+			if (side_test(triangle.a) != 1 && side_test(triangle.b) != 1 && side_test(triangle.b) != 1 ) return -1;
+			return 0;
+		}
 	};
 
 	struct Ray {
@@ -146,10 +160,9 @@ namespace math {
 			}
 		}
 
-		[[nodiscard]] bool intersect_with_surface(const Surface& surface, decimal &result) const {
+		[[nodiscard]] decimal intersect_with_surface(const Surface& surface) const {
 			Vector3d op = surface.p - origin;
-			result = op.dot(surface.normal) / direction.dot(surface.normal);
-			return sign(result) >= 0;
+			return op.dot(surface.normal) / direction.dot(surface.normal);
 		}
 
 	};

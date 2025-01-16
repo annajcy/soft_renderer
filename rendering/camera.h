@@ -7,6 +7,9 @@
 #include "event_center.h"
 
 namespace rendering {
+
+	using namespace framework;
+
 	enum CAMERA_MOVE_MODE{
 		TRANSLATE,
 		ROTATE
