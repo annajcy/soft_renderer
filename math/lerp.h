@@ -33,6 +33,15 @@ namespace math {
 		return {alpha, beta, gamma};
 	}
 
+	inline std::tuple<decimal, decimal, decimal> get_factor(const Point3d& a, const Point3d& b, const Point3d& c, const Point3d& p)  {
+		Triangle3d abc(a, b, c), pab(p, a, b), pbc(p, b, c), pca(p, c, a);
+		auto area_abc = abc.area();
+		auto alpha = (decimal)pbc.area() / area_abc;
+		auto beta = (decimal)pca.area() / area_abc;
+		auto gamma = (decimal)pab.area() / area_abc;
+		return {alpha, beta, gamma};
+	}
+
 	template<typename T>
 	inline T calculate_weighed(const T& a, const T& b, const T& c, const std::tuple<decimal, decimal, decimal>& barycentric) {
 		auto &[alpha, beta, gamma] = barycentric;

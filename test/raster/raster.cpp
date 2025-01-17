@@ -24,9 +24,13 @@ int width = 700;
 decimal angle = 40;
 decimal camera_z = 10.0;
 
-std::string model_path = "assets/obj/spot/spot_triangulated_good.obj";
+std::string model_path = "assets/obj/cube/cube.obj";
 std::string main_texture_path = "assets/obj/spot/spot_texture.png";
+
+//std::string model_path = "assets/obj/spot/spot_triangulated_good.obj";
+//std::string main_texture_path = "assets/obj/spot/spot_texture.png";
 std::string displacement_texture_path = "assets/obj/spot/hmap.jpg";
+
 
 auto model = std::make_shared<Model>(model_path);
 auto textures = std::make_shared<Texture_set>(std::unordered_map<std::string, std::shared_ptr<application::Texture>> {
@@ -36,7 +40,8 @@ auto textures = std::make_shared<Texture_set>(std::unordered_map<std::string, st
 
 auto camera = std::make_shared<Camera>(
 		45.0,
-		(decimal) width / height,
+		(decimal) width,
+		(decimal) height,
 		-0.1,
 		-50.0,
 		math::Vector3d {0.0, 0.0, 1.0},

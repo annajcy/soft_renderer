@@ -6,6 +6,7 @@
 #include "vec.h"
 #include "mat.h"
 #include "alias.h"
+#include "lerp.h"
 
 namespace math {
 
@@ -50,8 +51,8 @@ namespace math {
 		}
 
 		[[nodiscard]] Vector3d normal() const {
-			Vector3d ab = b - a, bc = c - b;
-			return cross(ab, bc).normalize();
+			Vector3d ab = b - a, ac = c - a;
+			return cross(ab, ac).normalize();
 		}
 
 	};
@@ -115,96 +116,24 @@ namespace math {
 		Point3d p{};
 		Vector3d normal{};
 
+		Surface() = default;
 		Surface(const Point3d &p_, const Vector3d &normal_) : p(p_), normal(normal_) {}
 		Surface(Point3d &&p_, Vector3d &&normal_) : p(std::move(p_)), normal(std::move(normal_)) {}
 		explicit Surface(const Triangle3d &abc) : p(abc.a), normal(abc.normal()) {}
 
 		/// side_test. define side where normal points to inside
-		/// \return 1 : inside, 0 : on the surface, -1 : out side the surface
+		/// \return 1 : inside, 1 : on the surface, 0 : out side the surface -1
 		[[nodiscard]] int side_test(const math::Point3d& point) const {
 			return sign((point - p).dot(normal));
 		}
 
 		/// side_test for triangle
-		/// \return 1 : inside, 0 : mixed, -1 : outside the surface
+		/// \return 1 : inside, 1 : mixed, 0 : outside the surface -1
 		[[nodiscard]] int side_test(const math::Triangle3d& triangle) const {
-			if (side_test(triangle.a) != -1 && side_test(triangle.b) != -1 && side_test(triangle.b) != -1 ) return 1;
-			if (side_test(triangle.a) != 1 && side_test(triangle.b) != 1 && side_test(triangle.b) != 1 ) return -1;
+			if (side_test(triangle.a) == 1 && side_test(triangle.b) == 1 && side_test(triangle.c) == 1 ) return 1;
+			if (side_test(triangle.a) == -1 && side_test(triangle.b) == -1 && side_test(triangle.c) == -1 ) return -1;
 			return 0;
 		}
-	};
-
-	struct Ray {
-		Point3d origin{};
-		Vector3d direction{};
-
-		Ray() = default;
-		Ray(const Point3d &origin_, const Point3d &direction_) : origin(origin_), direction(direction_) { }
-		Ray(Point3d &&origin_, Point3d &&direction_) : origin(std::move(origin_)), direction(std::move(direction_)) { }
-
-		[[nodiscard]] Point3d evaluate(decimal t) const {
-			return origin + direction * t;
-		}
-
-		[[nodiscard]] int intersect_with_sphere(const Sphere &sphere, std::pair<decimal, decimal> &result) const {
-			Vector3d co = origin - sphere.origin;
-			decimal a = direction.dot(direction);
-			decimal b = 2.0 * co.dot(direction);
-			decimal c = co.dot(co) - sphere.radius * sphere.radius;
-			decimal delta = b * b - 4 * a * c;
-			if (sign(delta) == -1) return -1;
-			else {
-				if (sign(delta) == 0) result = {-b / (2.0 * a), -b / (2.0 * a)};
-				else if (sign(delta) == 1) result = { (-b - std::sqrt(delta)) / (2.0 * a), (-b + std::sqrt(delta)) / (2.0 * a)};
-				return sign(delta);
-			}
-		}
-
-		[[nodiscard]] decimal intersect_with_surface(const Surface& surface) const {
-			Vector3d op = surface.p - origin;
-			return op.dot(surface.normal) / direction.dot(surface.normal);
-		}
-
-	};
-
-	struct RayHit {
-		Triangle3d surface{};
-		Ray ray{};
-		decimal t{};
-		std::tuple<decimal, decimal, decimal> barycentric{};
-
-		RayHit(const Triangle3d &surface_, const Ray &ray_) : surface(surface_), ray(ray_) {
-			evaluate();
-		}
-
-		RayHit(Triangle3d &&surface_, Ray &&ray_) : surface(std::move(surface_)), ray(std::move(ray_)) {
-			evaluate();
-		}
-
-		void evaluate() {
-			//Möller Trumbore Algorithm
-			Vector3d e1 = surface.b - surface.a;
-			Vector3d e2 = surface.c - surface.b;
-			Vector3d s0 = ray.origin - surface.a;
-			Vector3d s1 = cross(ray.direction, e2);
-			Vector3d s2 = cross(s0, e1);
-			decimal factor = s1.dot(e1);
-
-			t = s2.dot(e2) / factor;
-			auto beta = s1.dot(s0) / factor;
-			auto gamma = s2.dot(ray.direction) / factor;
-			auto alpha = 1.0 - beta - gamma;
-			barycentric = {alpha, beta, gamma};
-		}
-
-		[[nodiscard]] bool inside() const {
-			auto &[alpha, beta, gamma] = barycentric;
-			if (alpha < 0 || alpha > 1) return false;
-			if (beta < 0 || beta > 1) return false;
-			if (gamma < 0 || gamma > 1) return false;
-			return true;
-		}
-
 	};
 
 }

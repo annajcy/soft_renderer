@@ -91,6 +91,9 @@ namespace rendering {
 		}
 
 	public:
+		decimal width{};
+		decimal height{};
+
 		decimal fov{ 100.0 };
 		decimal aspect_ratio{ 1.0 };
 		decimal near{ 0.01 };
@@ -107,13 +110,13 @@ namespace rendering {
 
 		math::Point3d origin_position{};
 		math::Vector3d origin_front{};
-		math::Vector3d top{};
+		math::Vector3d top_direction{};
 
 		CAMERA_MOVE_MODE mode = CAMERA_MOVE_MODE::TRANSLATE;
 
 		Camera() = default;
-		Camera(decimal fov_, decimal aspect_ratio_, decimal near_, decimal far_, math::Point3d  front_, math::Point3d  top_, math::Point3d  position_) :
-				fov(fov_), aspect_ratio(aspect_ratio_), near(near_), far(far_), origin_front(std::move(front_)), top(std::move(top_)), origin_position(std::move(position_)) {
+		Camera(decimal fov_, decimal width_, decimal height_, decimal near_, decimal far_, math::Point3d  front_, math::Point3d  top_, math::Point3d  position_) :
+				fov(fov_), width(width_), height(height_), aspect_ratio(width_ / height_), near(near_), far(far_), origin_front(std::move(front_)), top_direction(std::move(top_)), origin_position(std::move(position_)) {
 			register_events();
 		}
 
@@ -142,6 +145,30 @@ namespace rendering {
 			delta_z += distance * direction.z();
 		}
 
+		[[nodiscard]] std::vector<std::pair<math::Ray, math::Pixel>> generate_rays() const {
+			std::vector<std::pair<math::Ray, math::Pixel>> rays{};
+			auto half_fov = deg_to_rad(fov * 0.5);
+			auto top = tan(half_fov) * -near, bottom = -top;
+			auto right = aspect_ratio * top, left = -right;
+
+			decimal stride_y = (top - bottom) / (height + 1);
+			decimal stride_x = (right - left) / (width + 1);
+
+			decimal start_y = bottom + stride_y / 2;
+			decimal start_x = left + stride_x / 2;
+
+			for (int i = 0; i < width; i ++)
+				for (int j = 0; j < height; j ++) {
+					decimal x = start_x + stride_x * i;
+					decimal y = start_y + stride_y * j;
+
+					auto p = math::Point3d {x, y, near};
+					rays.emplace_back(math::Ray{math::Point3d::zeros(), p.normalize()}, math::Pixel{i, j});
+				}
+
+			return rays;
+		}
+
 		[[nodiscard]] math::Vector3d front() const {
 			return math::Vector3d{ math::rotate_y(yaw) * math::rotate_x(pitch) * math::to_homo_vector(origin_front) }.normalize();
 		}
@@ -151,7 +178,7 @@ namespace rendering {
 		}
 
 		[[nodiscard]] math::Vector3d right() const {
-			return math::cross(front(), top).normalize();
+			return math::cross(front(), top_direction).normalize();
 		}
 
 		[[nodiscard]] math::Vector3d left() const {
@@ -171,7 +198,7 @@ namespace rendering {
 		}
 
 		[[nodiscard]] math::Transform3d get_view_matrix() const {
-			return math::view(front(), top, position());
+			return math::view(front(), top_direction, position());
 		}
 
 		[[nodiscard]] math::Transform3d get_projection_matrix() const {

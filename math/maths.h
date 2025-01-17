@@ -8,3 +8,4 @@
 #include "color.h"
 #include "alias.h"
 #include "sampler.h"
+#include "ray.h"

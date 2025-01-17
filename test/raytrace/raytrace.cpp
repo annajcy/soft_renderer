@@ -18,24 +18,26 @@ using rtr = Singleton<Raytracer>;
 using app = Singleton<Application>;
 
 std::string app_id = "soft_renderer";
-int height = 400;
-int width = 400;
+int height = 700;
+int width = 700;
 
 decimal angle = 40;
 decimal camera_z = 10.0;
 
-std::string model_path = "assets/obj/spot/spot_triangulated_good.obj";
+//std::string model_path = "assets/obj/spot/spot_triangulated_good.obj";
+//std::string main_texture_path = "assets/obj/spot/spot_texture.png";
+//std::string displacement_texture_path = "assets/obj/spot/hmap.jpg";
+
+std::string model_path = "assets/obj/cube/cube.obj";
 std::string main_texture_path = "assets/obj/spot/spot_texture.png";
-std::string displacement_texture_path = "assets/obj/spot/hmap.jpg";
 
 auto model = std::make_shared<Model>(model_path);
 auto textures = std::make_shared<Texture_set>(std::unordered_map<std::string, std::shared_ptr<application::Texture>> {
 		{"main", std::make_shared<Texture>(main_texture_path)},
-		{"height", std::make_shared<Texture>(displacement_texture_path)}
 });
 
 auto camera = std::make_shared<Camera>(
-		45,
+		45.0,
 		(decimal)width,
 		(decimal)height,
 		-0.1,
@@ -54,17 +56,18 @@ auto al = std::make_shared<Ambient_light> (math::Color::white(), math::Vector3d 
 
 auto lighting = std::make_shared<Lighting>(
 		std::vector<std::shared_ptr<Light>> {
-			pl1, pl2, pl3, dl1, dl2, al
+				pl1, pl2, pl3, dl1, dl2, al
 		}
 );
 
 void render() {
 	angle += 0.2;
 
-	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle) * math::scale(2.5, 2.5, 2.5);
+	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle) * math::scale(1.0, 1.0, 1.0);
 	auto blinn_phong_Shader = std::make_shared<Blinn_Phong_Shader>(
 			model_mat,
 			camera->get_view_matrix(),
+			camera->get_projection_matrix(),
 			textures);
 
 	rtr::get_instance()->set_camera(camera);
@@ -75,7 +78,6 @@ void render() {
 
 int main()
 {
-	BVH_node::triangle_max_size = 6000;
 	rtr::get_instance()->init(width, height);
 	app::get_instance()->init(width, height, app_id, rtr::get_instance()->color_buffer_raw());
 	app::get_instance()->delta_time = 0;

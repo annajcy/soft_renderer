@@ -18,29 +18,56 @@ namespace raytrace {
 		math::Point3d view_position{};
 		math::Vector3d view_normal{};
 		math::UV uv{};
+
+		static Intermediate_shader_data interpolate_intermediate_shader_data(
+				const Intermediate_shader_data &u,
+				const Intermediate_shader_data &v,
+				const std::pair<decimal, decimal> &factor) {
+
+			Intermediate_shader_data output{};
+
+			output.view_position = math::calculate_weighed(u.view_position, v.view_position, factor);
+			output.view_normal = math::calculate_weighed(u.view_normal, v.view_normal, factor);
+			output.uv = math::calculate_weighed(u.uv, v.uv, factor);
+
+			return output;
+
+		}
+
+		static Intermediate_shader_data interpolate_intermediate_shader_data(
+				const Intermediate_shader_data &a,
+				const Intermediate_shader_data &b,
+				const Intermediate_shader_data &c,
+				const std::tuple<decimal, decimal, decimal> &barycentric) {
+
+			Intermediate_shader_data output{};
+
+			output.view_position = math::calculate_weighed(a.view_position, b.view_position, c.view_position, barycentric);
+			output.view_normal = math::calculate_weighed(a.view_normal, b.view_normal, c.view_normal, barycentric);
+			output.uv = math::calculate_weighed(a.uv, b.uv, c.uv, barycentric);
+
+			return output;
+		}
 	};
 
 	struct Fragment_shader_input_data {
-		math::Pixel pixel_position{};
-		decimal depth{};
 		math::Point3d view_position{};
 		math::Point3d view_normal{};
 		math::Point3d view_tangent{};
 		math::UV uv{};
-		math::Color_decimal base_color{};
-		decimal transparency{};
 	};
 
 	struct Final_shader_data {
-		math::Color color{};
-		math::Pixel pixel_position{};
-		decimal depth{};
+		math::Color_decimal color{};
 	};
 
 	class Shader {
 	public:
 		virtual Intermediate_shader_data vertex_shader(const Vertex_shader_input_data& input) = 0;
-		virtual Final_shader_data fragment_shader(const Fragment_shader_input_data& input) = 0;
+		virtual Final_shader_data fragment_shader(
+				const Fragment_shader_input_data& input,
+				const std::shared_ptr<rendering::Camera> &camera,
+				const std::shared_ptr<rendering::Lighting> &lighting) = 0;
 	};
 
 	//Simple Blinn-Phong Shader
@@ -49,9 +76,6 @@ namespace raytrace {
 		//Uniform
 		math::Transform3d model{};
 		math::Transform3d view{};
-		math::Transform3d projection{};
-		std::shared_ptr<rendering::Camera> camera { nullptr };
-		std::shared_ptr<rendering::Lighting> lighting { nullptr };
 		std::shared_ptr<rendering::Texture_set> textures {nullptr };
 
 		const int kp = 50;
@@ -63,40 +87,26 @@ namespace raytrace {
 		Blinn_Phong_Shader(
 				math::Transform3d &&model_,
 				math::Transform3d &&view_,
-				math::Transform3d &&projection_,
-				std::shared_ptr<rendering::Camera> &&camera_,
-				std::shared_ptr<rendering::Lighting> &&lighting_ ,
 				std::shared_ptr<rendering::Texture_set> &&textures_) :
 				Shader(),
 				model(std::move(model_)),
 				view(std::move(view_)),
-				projection(std::move(projection_)),
-				camera(std::move(camera_)),
-				lighting(std::move(lighting_)),
 				textures(std::move(textures_)) { }
 
 		Blinn_Phong_Shader(
 				const math::Transform3d &model_,
 				const math::Transform3d &view_,
-				const math::Transform3d &projection_,
-				const std::shared_ptr<rendering::Camera> &camera_,
-				const std::shared_ptr<rendering::Lighting> &lighting_ ,
 				const std::shared_ptr<rendering::Texture_set> &textures_) :
 				Shader(),
 				model(model_),
 				view(view_),
-				projection(projection_),
-				camera(camera_),
-				lighting(lighting_),
 				textures(textures_) { }
 
 		Intermediate_shader_data vertex_shader(const Vertex_shader_input_data& input) override {
 
 			Intermediate_shader_data output{};
 
-			auto mvp = projection * view * model;
 			auto mv = view * model;
-
 			output.view_position = to_point((mv * to_homo_point(input.position)));
 			output.view_normal = to_vector((mv.transpose().inv() * to_homo_vector(input.normal))).normalize();
 			output.uv = input.uv;
@@ -104,10 +114,8 @@ namespace raytrace {
 			return output;
 		}
 
-		Final_shader_data fragment_shader(const Fragment_shader_input_data& input) override {
+		Final_shader_data fragment_shader(const Fragment_shader_input_data& input, const std::shared_ptr<rendering::Camera> &camera, const std::shared_ptr<rendering::Lighting> &lighting) override {
 			Final_shader_data output{};
-			output.pixel_position = input.pixel_position;
-			output.depth = abs(input.depth);
 
 			auto color_tex = [&](decimal u, decimal v) {
 				return to_vector(textures->get_texture("main")->at_uv_bilinear(u, v).to_color_decimal());
@@ -172,7 +180,7 @@ namespace raytrace {
 				color += diffuse + specular;
 			}
 
-			output.color = math::Color(math::Color_decimal {color.x(), color.y(), color.z(), 1.0});
+			output.color = math::Color_decimal {color.x(), color.y(), color.z(), 1.0};
 			return output;
 		}
 	};

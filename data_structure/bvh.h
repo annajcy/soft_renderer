@@ -68,64 +68,37 @@ namespace raytrace {
 			return math::Point3d {origin.x(), origin.y(), origin.z() + range.z()};
 		}
 
-		[[nodiscard]] std::pair<AABB, AABB> split_x() const {
-			AABB left{}, right{};
-			left.range = range;
-			left.range.x() /= 2;
-
-			right.range = range;
-			right.range.x() /= 2;
-
-			left.origin = origin;
-			right.origin = origin;
-			right.origin.x() += range.x() / 2;
-
-			return std::make_pair(left, right);
+		[[nodiscard]] math::Surface split_x() const {
+			math::Point3d point{origin.x() + range.x() / 2, origin.y(), origin.z()};
+			math::Vector3d normal{1.0, 0.0, 0.0};
+			return math::Surface{point, normal};
 		}
 
-		[[nodiscard]] std::pair<AABB, AABB> split_y() const {
-			AABB left{}, right{};
-			left.range = range;
-			left.range.y() /= 2;
-
-			right.range = range;
-			right.range.y() /= 2;
-
-			left.origin = origin;
-			right.origin = origin;
-			right.origin.y() += range.y() / 2;
-
-			return std::make_pair(left, right);
+		[[nodiscard]] math::Surface split_y() const {
+			math::Point3d point{origin.x(), origin.y() + range.y() / 2, origin.z()};
+			math::Vector3d normal{0.0, 1.0, 0.0};
+			return math::Surface{point, normal};
 		}
 
-		[[nodiscard]] std::pair<AABB, AABB> split_z() const {
-			AABB left{}, right{};
-			left.range = range;
-			left.range.z() /= 2;
-
-			right.range = range;
-			right.range.z() /= 2;
-
-			left.origin = origin;
-			right.origin = origin;
-			right.origin.z() += range.z() / 2;
-
-			return std::make_pair(left, right);
+		[[nodiscard]] math::Surface split_z() const {
+			math::Point3d point{origin.x(), origin.y(), origin.z() + range.z() / 2};
+			math::Vector3d normal{0.0, 0.0, 1.0};
+			return math::Surface{point, normal};
 		}
 
 	};
 
 	struct BVH_node : std::enable_shared_from_this<BVH_node> {
-		int triangle_max_size{5};
-		int max_depth{50};
+		static int triangle_max_size;
+		static int max_depth;
 		std::vector<Triangle> triangles{};
 		AABB aabb{};
 
 		std::shared_ptr<BVH_node> left_node{nullptr};
 		std::shared_ptr<BVH_node> right_node{nullptr};
 
-		BVH_node(int triangle_max_size_, int max_depth_ ) : triangle_max_size(triangle_max_size_), max_depth(max_depth_){}
-		BVH_node(const std::vector<Triangle>& triangles_, int triangle_max_size_, int max_depth_ ) : triangles(triangles_), triangle_max_size(triangle_max_size_), max_depth(max_depth_) {
+		BVH_node()= default;
+		explicit BVH_node(const std::vector<Triangle>& triangles_) : triangles(triangles_) {
 			aabb = get_AABB();
 		}
 
@@ -153,15 +126,9 @@ namespace raytrace {
 			}
 
 			return AABB{
-					math::Point3d {min_x, min_y, min_z},
-					math::Point3d {max_x - min_x, max_y - min_y, max_z - min_z}
+					math::Point3d {min_x - eps, min_y - eps, min_z - eps},
+					math::Point3d {max_x - min_x + eps, max_y - min_y + eps, max_z - min_z + eps}
 			};
-		}
-
-		static bool enclose(const math::Triangle3d &triangle_, const std::vector<math::Surface>& bounding_box) {
-			for (auto &surface : bounding_box)
-				if (surface.side_test(triangle_) != 1) return false;
-			return true;
 		}
 
 		[[nodiscard]] bool is_leaf() const {
@@ -172,13 +139,29 @@ namespace raytrace {
 			return triangles.size() > triangle_max_size;
 		}
 
-		void update_triangles(const std::vector<Triangle> &triangles_) {
-			triangles.clear();
-			auto surface_vec = aabb.get_surfaces_vec();
-			for (auto &triangle : triangles_) {
-				if (enclose(triangle.position, surface_vec))
-					triangles.push_back(triangle);
+		static void split_triangles(
+				const std::shared_ptr<BVH_node> &left,
+				const std::shared_ptr<BVH_node> &right,
+				const std::vector<Triangle> &triangles,
+				const math::Surface &surface) {
+
+			left->triangles.clear();
+			right->triangles.clear();
+
+			for (auto &tri : triangles) {
+				int side_test = surface.side_test(tri.position);
+				if (side_test == 1) {
+					left->triangles.push_back(tri);
+				} else if (side_test == -1) {
+					right->triangles.push_back(tri);
+				} else {
+					left->triangles.push_back(tri);
+					right->triangles.push_back(tri);
+				}
 			}
+
+			left->aabb = left->get_AABB();
+			right->aabb = right->get_AABB();
 		}
 
 		void split(int depth) {
@@ -194,32 +177,21 @@ namespace raytrace {
 			std::cout << "depth : " << depth << std::endl;
 			std::cout << "division : " << triangles.size() <<  std::endl;
 
-			left_node = std::make_shared<BVH_node>(triangle_max_size, max_depth);
-			right_node = std::make_shared<BVH_node>(triangle_max_size, max_depth);
+			left_node = std::make_shared<BVH_node>();
+			right_node = std::make_shared<BVH_node>();
 
 			int split_axis = aabb.get_division_axis();
+			math::Surface split_surface{};
 
 			if (split_axis == 0) {
-				auto [left_aabb, right_aabb] = aabb.split_x();
-				//split x
-				left_node->aabb = left_aabb;
-				right_node->aabb = right_aabb;
-
+				split_surface = aabb.split_x();
 			} else if (split_axis == 1) {
-				auto [left_aabb, right_aabb] = aabb.split_y();
-				//split y
-				left_node->aabb = left_aabb;
-				right_node->aabb = right_aabb;
-
+				split_surface = aabb.split_y();
 			} else {
-				auto [left_aabb, right_aabb] = aabb.split_z();
-				//split z
-				left_node->aabb = left_aabb;
-				right_node->aabb = right_aabb;
+				split_surface = aabb.split_z();
 			}
 
-			left_node->update_triangles(triangles);
-			right_node->update_triangles(triangles);
+			split_triangles(left_node, right_node, triangles, split_surface);
 
 			if (!left_node->triangles.empty()) left_node->split(depth + 1);
 			else left_node.reset();
@@ -229,7 +201,6 @@ namespace raytrace {
 
 		std::shared_ptr<BVH_node> query(const math::Ray &ray) {
 			if (is_leaf()) return shared_from_this();
-			decimal t_left{}, t_right{};
 
 			if (left_node == nullptr && right_node != nullptr) {
 				return right_node->query(ray);
@@ -239,14 +210,13 @@ namespace raytrace {
 				return left_node->query(ray);
 			}
 
+			decimal t_left{}, t_right{};
 			left_node->has_intersection_with_ray(ray, t_left);
 			right_node->has_intersection_with_ray(ray, t_right);
 
 			if (t_left < t_right) {
-				std::cout << "left is a closer Hit" << std::endl;
 				return left_node->query(ray);
 			} else {
-				std::cout << "right is a closer Hit" << std::endl;
 				return right_node->query(ray);
 			}
 		}
@@ -266,7 +236,7 @@ namespace raytrace {
 			decimal t_enter = std::max({t_min_y, t_min_x, t_min_z});
 			decimal t_exit = std::min({t_max_y, t_max_x, t_max_z});
 
-			if (t_enter < t_exit) {
+			if (sign(t_enter - t_exit) < 0) {
 				t_enter_result = t_enter;
 				return true;
 			}
@@ -275,6 +245,9 @@ namespace raytrace {
 			return false;
 		}
 	};
+
+	int BVH_node::max_depth = 50;
+	int BVH_node::triangle_max_size = 200;
 
 }
 
