@@ -17,7 +17,8 @@ include_directories( rendering )
 include_directories( mesh )
 include_directories( utils )
 include_directories( curve )
-include_directories( data_structure )
+
+include_directories( third_party/include )
 
 file(GLOB copy_resources "assets")
 file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
@@ -25,5 +26,8 @@ file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
 # soft_renderer
 add_executable(soft_renderer main.cpp)
 target_link_libraries( soft_renderer ${OpenCV_LIBS} )
+
+file(GLOB assimp_lib third_party/lib/assimp/*.dylib)
+target_link_libraries( soft_renderer ${assimp_lib} )
 
 

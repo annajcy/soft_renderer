@@ -31,7 +31,9 @@ concept Equal = (P == Q);
 template<typename Base, typename Derived>
 concept Inherited = std::is_base_of_v<Base, Derived>;
 
-constexpr double eps = 1e-8;
+constexpr decimal eps = 1e-20;
+constexpr decimal inf = std::numeric_limits<decimal>::max();
+constexpr decimal neg_inf = std::numeric_limits<decimal>::lowest();
 
 inline bool equal(const decimal& a, const decimal& b) {
     return (std::fabs(a - b) < eps);

@@ -3,7 +3,7 @@
 #include "base.h"
 #include "color.h"
 #include "buffer.h"
-#include "shader_raster.h"
+#include "raster_shader.h"
 #include "mesh.h"
 #include "gpu.h"
 
@@ -20,9 +20,22 @@ namespace raster {
 	{
 
 	private:
-
 		std::shared_ptr<Depth_buffer> depth_buffer{};
-		std::shared_ptr<Shader> shader{};
+		std::shared_ptr<Raster_shader> shader{};
+
+		template<typename T>
+		void set_shader(const std::shared_ptr<T>& shader_) requires Inherited<Raster_shader, typename std::remove_reference<T>::type> {
+			shader = dynamic_pointer_cast<Raster_shader>(shader_);
+		}
+
+		template<typename T = Raster_shader>
+		std::shared_ptr<T> get_shader() {
+			auto result = std::dynamic_pointer_cast<T>(shader);
+			if (!result) {
+				throw std::runtime_error("Failed to cast shader to the requested type");
+			}
+			return result;
+		}
 
 		[[nodiscard]] bool cull(const std::array<Intermediate_shader_data, 3> &face) const {
 			//if triangle is faced backward, then discard
@@ -110,11 +123,6 @@ namespace raster {
 		bool depth_test_enabled = true;
 		bool depth_update_enabled = true;
 
-		template<typename T>
-		void set_shader(const std::shared_ptr<T> shader_) requires Inherited<Shader, typename std::remove_reference<T>::type> {
-			shader = shader_;
-		}
-
 		void init(int width, int height) override {
 			GPU::init(width, height);
 			depth_buffer = std::make_shared<Depth_buffer>();
@@ -126,7 +134,7 @@ namespace raster {
 			depth_buffer->clear();
 		}
 
-		void draw_model(const std::shared_ptr<mesh::Model> &model) override {
+		void draw_model(const std::shared_ptr<mesh::Model> &model) {
 
 			std::vector<std::array<Intermediate_shader_data, 3>> surfaces;
 
@@ -146,7 +154,7 @@ namespace raster {
 				//vertex shade
 				std::array<Intermediate_shader_data, 3> intermediate_surface{};
 				for (int vid : {0, 1, 2}) {
-					intermediate_surface[vid] = shader->vertex_shader(face_vs_data[vid]);
+					intermediate_surface[vid] = get_shader<Raster_shader>()->vertex_shader(face_vs_data[vid]);
 				}
 
 				//cull
@@ -176,7 +184,7 @@ namespace raster {
 				std::vector<Final_shader_data> final_fragments;
 				final_fragments.reserve(fs_data.size());
 				for (auto &fragment : fs_data) {
-					final_fragments.push_back(shader->fragment_shader(fragment));
+					final_fragments.push_back(get_shader<Raster_shader>()->fragment_shader(fragment));
 				}
 
 				//set_pixel and test z buffer

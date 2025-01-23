@@ -6,40 +6,92 @@
 
 namespace math {
 	struct Ray {
+
+		enum class Intersection_type {
+			NONE = -1,
+			TANGENT = 0,
+			SECANT = 1,
+		};
+
 		Point3d origin{};
 		Vector3d direction{};
 
 		Ray() = default;
-		Ray(const Point3d &origin_, const Point3d &direction_) : origin(origin_), direction(direction_.normalize()) { }
-		Ray(Point3d &&origin_, Point3d &&direction_) : origin(std::move(origin_)), direction(std::move(direction_.normalize())) { }
+
+		Ray(const Point3d &origin_, const Point3d &direction_)
+				: origin(origin_), direction(direction_.normalize()) {
+			if (direction_.norm() == 0) {
+				throw std::invalid_argument("Direction vector cannot be zero.");
+			}
+		}
+
+		Ray(Point3d &&origin_, Point3d &&direction_)
+				: origin(std::move(origin_)), direction(direction_.normalize()) {
+			if (direction_.norm() == 0) {
+				throw std::invalid_argument("Direction vector cannot be zero.");
+			}
+		}
 
 		[[nodiscard]] Point3d evaluate(decimal t) const {
 			return origin + direction * t;
 		}
 
-		[[nodiscard]] int intersect_with_sphere(const Sphere &sphere, std::pair<decimal, decimal> &result) const {
+		[[nodiscard]] Intersection_type intersect_with_sphere(const Sphere &sphere, std::pair<decimal, decimal> &result) const {
 			Vector3d co = origin - sphere.origin;
 			decimal a = direction.dot(direction);
 			decimal b = 2.0 * co.dot(direction);
 			decimal c = co.dot(co) - sphere.radius * sphere.radius;
 			decimal delta = b * b - 4 * a * c;
-			if (sign(delta) == -1) return -1;
-			else {
-				if (sign(delta) == 0) result = {-b / (2.0 * a), -b / (2.0 * a)};
-				else if (sign(delta) == 1) result = { (-b - std::sqrt(delta)) / (2.0 * a), (-b + std::sqrt(delta)) / (2.0 * a)};
-				return sign(delta);
+			if (delta < 0) return Intersection_type::NONE;
+			decimal t1 = (-b - std::sqrt(delta)) / (2.0 * a);
+			decimal t2 = (-b + std::sqrt(delta)) / (2.0 * a);
+			result = delta == 0 ? std::make_pair(t1, t1) : std::make_pair(t1, t2);
+			return delta == 0 ? Intersection_type::TANGENT : Intersection_type::SECANT;
+		}
+
+		[[nodiscard]] bool intersect_with_surface(const Surface& surface, decimal &t) const {
+			decimal denominator = direction.dot(surface.normal);
+			if (std::abs(denominator) < eps) {
+				t = std::numeric_limits<decimal>::infinity();
+				return false;
 			}
+			t = (surface.p - origin).dot(surface.normal) / denominator;
+			return true;
 		}
 
-		[[nodiscard]] decimal intersect_with_surface(const Surface& surface) const {
-			Vector3d op = surface.p - origin;
-			return op.dot(surface.normal) / direction.dot(surface.normal);
+		[[nodiscard]] Ray reflect(const decimal &distance, const Vector3d &normal) const {
+			Vector3d reflected_dir = direction - 2 * direction.dot(normal) * normal;
+			return Ray{ evaluate(distance), reflected_dir.normalize() };
 		}
 
-		[[nodiscard]] Ray reflect(const decimal &distance, const math::Vector3d &normal) const {
-			return Ray{ evaluate(distance), 2 * (direction - direction.project_to(normal)) - direction };
-		}
 
+		[[nodiscard]] bool refract(Ray& ray, const decimal& distance, const Vector3d& normal, const decimal ior) const {
+			// Calculate the dot product of direction and normal
+			decimal cos_dn = direction.dot(normal);
+			decimal eta = (cos_dn > 0) ? ior : 1.0 / ior; // Determine refractive index ratio based on entry or exit
+			Vector3d adjusted_normal = (cos_dn > 0) ? -normal : normal; // Adjust normal for exit scenario
+			cos_dn = std::abs(cos_dn);
+
+			// Calculate sin²(t) using Snell's law: sin²(t) = eta² * (1 - cos²(i))
+			decimal sin2_t = eta * eta * (1.0 - cos_dn * cos_dn);
+
+			// Check for total internal reflection
+			if (sin2_t > 1.0) {
+				std::cerr << "Total internal reflection occurs\n";
+				return false;
+			}
+
+			// Calculate cos(t) from sin²(t): cos²(t) = 1 - sin²(t)
+			decimal cos_t = std::sqrt(1.0 - sin2_t);
+
+			// Calculate the refracted direction
+			Vector3d refracted_dir = eta * direction + (eta * cos_dn - cos_t) * adjusted_normal;
+
+			// Create the refracted ray
+			ray = Ray{ evaluate(distance), refracted_dir.normalize() };
+
+			return true;
+		}
 	};
 
 	struct RayHit {

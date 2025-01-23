@@ -68,6 +68,7 @@ namespace rendering {
 
 	struct Lighting {
 		std::vector<std::shared_ptr<Light>> lights{};
+		Lighting() = default;
 		explicit Lighting(const std::vector<std::shared_ptr<Light>> &lights_) : lights(lights_) {}
 		explicit Lighting(std::vector<std::shared_ptr<Light>> &&lights_) : lights(std::move(lights_)) {}
 
@@ -81,5 +82,11 @@ namespace rendering {
 			}
 			return result;
 		}
+
+		template<typename T>
+		void add_light(const std::shared_ptr<T>& light) requires Inherited<Light, T> {
+			lights.push_back(light);
+		}
+
 	};
 }

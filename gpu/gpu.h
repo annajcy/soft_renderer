@@ -1,7 +1,6 @@
 #pragma once
 
 #include "buffer.h"
-#include "shader_raster.h"
 
 namespace gpu {
 
@@ -19,14 +18,14 @@ namespace gpu {
 
 		virtual void clear() { color_buffer->clear(); }
 
-		virtual void draw_model(const std::shared_ptr<mesh::Model> &model) = 0;
+		virtual void render_scene(const std::shared_ptr<rendering::Scene> &scene) = 0;
 
-		[[nodiscard]] u_int8_t* color_buffer_raw() {
+		[[nodiscard]] u_int8_t* color_buffer_raw() const {
 			return reinterpret_cast<u_int8_t*>(color_buffer->data.get());
 		}
 
 		//the color format of opencv is BGR, and y is inverted.
-		void set_pixel(int x, int y, const math::Color& color, bool blend = true) {
+		void set_pixel(int x, int y, const math::Color& color, bool blend = true) const {
 			y = height() - y;
 			if (!color_buffer->is_valid(x, y)) return;
 			auto& pixel = color_buffer->at(x, y);
