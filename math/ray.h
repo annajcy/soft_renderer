@@ -58,41 +58,36 @@ namespace math {
 			t = (surface.p - origin).dot(surface.normal) / denominator;
 			return true;
 		}
-
-		[[nodiscard]] Ray reflect(const decimal &distance, const Vector3d &normal) const {
-			Vector3d reflected_dir = direction - 2 * direction.dot(normal) * normal;
-			return Ray{ evaluate(distance), reflected_dir.normalize() };
-		}
-
-
-		[[nodiscard]] bool refract(Ray& ray, const decimal& distance, const Vector3d& normal, const decimal ior) const {
-			// Calculate the dot product of direction and normal
-			decimal cos_dn = direction.dot(normal);
-			decimal eta = (cos_dn > 0) ? ior : 1.0 / ior; // Determine refractive index ratio based on entry or exit
-			Vector3d adjusted_normal = (cos_dn > 0) ? -normal : normal; // Adjust normal for exit scenario
-			cos_dn = std::abs(cos_dn);
-
-			// Calculate sin²(t) using Snell's law: sin²(t) = eta² * (1 - cos²(i))
-			decimal sin2_t = eta * eta * (1.0 - cos_dn * cos_dn);
-
-			// Check for total internal reflection
-			if (sin2_t > 1.0) {
-				std::cerr << "Total internal reflection occurs\n";
-				return false;
-			}
-
-			// Calculate cos(t) from sin²(t): cos²(t) = 1 - sin²(t)
-			decimal cos_t = std::sqrt(1.0 - sin2_t);
-
-			// Calculate the refracted direction
-			Vector3d refracted_dir = eta * direction + (eta * cos_dn - cos_t) * adjusted_normal;
-
-			// Create the refracted ray
-			ray = Ray{ evaluate(distance), refracted_dir.normalize() };
-
-			return true;
-		}
 	};
+
+	// Reflect a vector `v` around a normal `n`.
+	// Assumes `n` is normalized.
+	inline Vector3d reflect(const Vector3d& v, const Vector3d& n) {
+		return v - 2.0 * v.dot(n) * n;
+	}
+
+	// Refract a vector `v` through a surface with normal `n` and indices of refraction `ior`.
+	// Returns true if refraction occurs; false otherwise (total internal reflection).
+	inline bool refract(Vector3d& refracted, const Vector3d& v, const Vector3d& n, decimal ior) {
+		Vector3d unit_v = v.normalize();
+		decimal cos_theta = -unit_v.dot(n); // Angle between the ray and the surface normal.
+
+		// Determine refraction ratio based on the ray's direction.
+		decimal eta = cos_theta > 0 ? (1.0 / ior) : ior; // Entering or exiting the medium.
+		Vector3d adjusted_normal = cos_theta > 0 ? n : -n;
+
+		decimal sin_theta2 = eta * eta * (1.0 - cos_theta * cos_theta);
+		if (sin_theta2 > 1.0) {
+			// Total internal reflection
+			return false;
+		}
+
+		decimal cos_theta2 = sqrt(1.0 - sin_theta2);
+		refracted = eta * unit_v + (eta * cos_theta - cos_theta2) * adjusted_normal;
+		return true;
+	}
+
+
 
 	struct RayHit {
 		Triangle3d surface{};

@@ -17,12 +17,13 @@ using rtr = Singleton<Raytracer>;
 using app = Singleton<Application>;
 
 std::string app_id = "soft_renderer";
-int height = 200;
-int width = 200;
+int height = 500;
+int width = 500;
 
-decimal angle = 40;
+decimal angle = 45;
 decimal camera_z = 10.0;
 
+//std::string model_path = "assets/obj/cube/cube.obj";
 std::string model_path = "assets/obj/spot/spot_triangulated_good.obj";
 std::string main_texture_path = "assets/obj/spot/spot_texture.png";
 std::string displacement_texture_path = "assets/obj/spot/hmap.jpg";
@@ -36,7 +37,7 @@ auto textures = std::make_shared<Texture_set>(std::unordered_map<std::string, st
 auto material = std::make_shared<Material>(textures);
 
 auto camera = std::make_shared<Camera>(
-		45,
+		60,
 		(decimal)width,
 		(decimal)height,
 		-0.1,
@@ -63,12 +64,13 @@ auto scene = std::make_shared<Scene>();
 
 void prepare() {
 
+	BVH_node::max_depth = 100;
 	BVH_node::max_primitives_count = 10;
-	rtr ::get_instance()->max_depth = 0;
+	rtr::get_instance()->max_depth = 1;
 
 	scene->set_light(lighting);
 	scene->set_camera(camera);
-	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle) * math::scale(2.5, 2.5, 2.5);
+	auto model_mat = math::rotate({0.0, 1.0, 0.0}, angle) * math::scale(4.0, 4.0, 4.0);
 	auto view_mat = scene->camera->get_view_matrix();
 	scene->add_model(std::make_shared<rendering::Model>(*model, view_mat * model_mat, material));
 

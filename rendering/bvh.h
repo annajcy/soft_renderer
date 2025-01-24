@@ -4,6 +4,12 @@
 
 namespace rendering {
 
+	struct Hit_info {
+		mesh::Vertex closest_hit_vert{};
+		std::shared_ptr<rendering::Material> material{};
+		decimal closest_dist{inf};
+	};
+
 	struct BVH_node : std::enable_shared_from_this<BVH_node> {
 		static int max_primitives_count;
 		static int max_depth;
@@ -20,7 +26,11 @@ namespace rendering {
 
 		BVH_node(const std::vector<std::shared_ptr<Primitive>> &primitives_, int depth_) : depth(depth_) {
 			for (auto &p : primitives_) {
-				primitives.push_back(p);
+				if (p) {
+					primitives.push_back(p);
+				}
+				else throw std::invalid_argument("");
+
 			}
 			aabb = get_AABB();
 		}
@@ -53,54 +63,65 @@ namespace rendering {
 			return result;
 		};
 
-		std::shared_ptr<BVH_node> query(const math::Ray &ray) {
-			if (is_leaf()) return shared_from_this();
+		bool get_closest_primitive(Hit_info &hit_info, const math::Ray &ray, const std::shared_ptr<BVH_node>& queried_node) {
 
-			if (is_only_left()) {
+			bool hit_found = false;
+
+			for (auto& pri: queried_node->primitives) {
+				mesh::Vertex hit_vert{};
 				decimal dist{};
-				if (!left_node->aabb.intersect_with_ray(ray, dist)) {
-					return nullptr;
+				if (!pri->intersect(ray, hit_vert, dist)) continue;
+				if (!hit_found || dist < hit_info.closest_dist) {
+					hit_info.closest_hit_vert = hit_vert;
+					hit_info.closest_dist = dist;
+					hit_info.material = pri->material;
 				}
-				return left_node->query(ray);
+
+				hit_found = true;
 			}
 
-			if (is_only_right()) {
-				decimal dist{};
-				if (!right_node->aabb.intersect_with_ray(ray, dist)) {
-					return nullptr;
-				}
-				return right_node->query(ray);
-			}
-
-			decimal dist_left{};
-			decimal dist_right{};
-
-			bool hit_left = left_node->aabb.intersect_with_ray(ray, dist_left);
-			bool hit_right = right_node->aabb.intersect_with_ray(ray, dist_right);
-
-			if (hit_left && hit_right) {
-				if (dist_left < dist_right)
-				{
-					auto node = left_node->query(ray);
-					if (node) return node;
-					else return right_node->query(ray);
-				} else {
-					auto node = right_node->query(ray);
-					if (node) return node;
-					else return left_node->query(ray);
-				}
-			}
-
-			if (hit_left) {
-				return left_node->query(ray);
-			}
-
-			if (hit_right) {
-				return right_node->query(ray);
-			}
-
-			return nullptr;
+			return hit_found;
 		}
+
+		bool query(Hit_info &hit_info, const math::Ray &ray) {
+			decimal distance{};
+			// Check if the ray intersects the AABB of the current node
+			if (!aabb.intersect_with_ray(ray ,distance)) {
+				return false; // No intersection with this node
+			}
+
+			// If this is a leaf node, check for intersection with its primitives
+			if (is_leaf()) {
+				return get_closest_primitive(hit_info, ray, shared_from_this());
+			}
+
+			bool hit_found = false;
+
+			// Query the left child node if it exists
+			if (left_node) {
+				Hit_info left_hit_info = hit_info; // Create a local copy to track hits in the left subtree
+				if (left_node->query(left_hit_info, ray)) {
+					hit_found = true;
+					if (left_hit_info.closest_dist < hit_info.closest_dist) {
+						hit_info = left_hit_info; // Update the closest hit information
+					}
+				}
+			}
+
+			// Query the right child node if it exists
+			if (right_node) {
+				Hit_info right_hit_info = hit_info; // Create a local copy to track hits in the right subtree
+				if (right_node->query(right_hit_info, ray)) {
+					hit_found = true;
+					if (right_hit_info.closest_dist < hit_info.closest_dist) {
+						hit_info = right_hit_info; // Update the closest hit information
+					}
+				}
+			}
+
+			return hit_found;
+		}
+
 
 		void build() {
 
@@ -130,8 +151,8 @@ namespace rendering {
 				auto center_a = a->get_AABB().centroid();
 				auto center_b = b->get_AABB().centroid();
 				if (center_a.y() != center_b.y()) return center_a.y() < center_b.y();
-				if (center_a.x() != center_b.x()) return center_a.x() < center_b.x();
 				if (center_a.z() != center_b.z()) return center_a.z() < center_b.z();
+				if (center_a.x() != center_b.x()) return center_a.x() < center_b.x();
 				return true;
 			};
 
@@ -139,8 +160,8 @@ namespace rendering {
 				auto center_a = a->get_AABB().centroid();
 				auto center_b = b->get_AABB().centroid();
 				if (center_a.z() != center_b.z()) return center_a.z() < center_b.z();
-				if (center_a.y() != center_b.y()) return center_a.y() < center_b.y();
 				if (center_a.x() != center_b.x()) return center_a.x() < center_b.x();
+				if (center_a.y() != center_b.y()) return center_a.y() < center_b.y();
 				return true;
 			};
 

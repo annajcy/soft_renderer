@@ -36,7 +36,7 @@ namespace rendering {
 		decimal kd{10};
 		decimal ks{5};
 		decimal specular_exp{50.0};
-		decimal reflection_loss{0.3};
+		decimal reflection_loss{0.0};
 		std::shared_ptr<Texture_set> texture_set{};
 
 		Material(const std::shared_ptr<Texture_set> &texture_set_) : texture_set(texture_set_) {}
