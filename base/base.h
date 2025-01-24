@@ -31,7 +31,7 @@ concept Equal = (P == Q);
 template<typename Base, typename Derived>
 concept Inherited = std::is_base_of_v<Base, Derived>;
 
-constexpr decimal eps = 1e-20;
+constexpr decimal eps = 1e-40;
 constexpr decimal inf = std::numeric_limits<decimal>::max();
 constexpr decimal neg_inf = std::numeric_limits<decimal>::lowest();
 

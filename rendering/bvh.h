@@ -59,7 +59,6 @@ namespace rendering {
 			if (is_only_left()) {
 				decimal dist{};
 				if (!left_node->aabb.intersect_with_ray(ray, dist)) {
-					std::cout << "query failed on left!" << std::endl;
 					return nullptr;
 				}
 				return left_node->query(ray);
@@ -68,7 +67,6 @@ namespace rendering {
 			if (is_only_right()) {
 				decimal dist{};
 				if (!right_node->aabb.intersect_with_ray(ray, dist)) {
-					std::cout << "query failed on right!" << std::endl;
 					return nullptr;
 				}
 				return right_node->query(ray);
@@ -81,14 +79,27 @@ namespace rendering {
 			bool hit_right = right_node->aabb.intersect_with_ray(ray, dist_right);
 
 			if (hit_left && hit_right) {
-				if (dist_left < dist_right) return left_node->query(ray);
-				else return right_node->query(ray);
+				if (dist_left < dist_right)
+				{
+					auto node = left_node->query(ray);
+					if (node) return node;
+					else return right_node->query(ray);
+				} else {
+					auto node = right_node->query(ray);
+					if (node) return node;
+					else return left_node->query(ray);
+				}
 			}
 
-			if (hit_left) return left_node->query(ray);
-			if (hit_right) return right_node->query(ray);
+			if (hit_left) {
+				return left_node->query(ray);
+			}
 
-			return shared_from_this();
+			if (hit_right) {
+				return right_node->query(ray);
+			}
+
+			return nullptr;
 		}
 
 		void build() {
@@ -100,11 +111,6 @@ namespace rendering {
 
 			if (primitive_mined()) {
 				std::cout << "primitive maxed up: " << primitives.size() << std::endl;
-				return;
-			}
-
-			if (primitives.empty()) {
-				std::cout << "primitive is empty " << std::endl;
 				return;
 			}
 
@@ -155,7 +161,7 @@ namespace rendering {
 			std::vector<std::shared_ptr<Primitive>> left_primitive{};
 			std::vector<std::shared_ptr<Primitive>> right_primitive{};
 
-			int mid = (primitives.size() - 1) / 2;
+			int mid = primitives.size() / 2;
 
 			left_primitive.reserve(mid);
 			right_primitive.reserve(primitives.size() - mid);
@@ -173,6 +179,7 @@ namespace rendering {
 				left_node = std::make_shared<BVH_node>(left_primitive, depth + 1);
 				left_node->build();
 			}
+
 			if (!right_primitive.empty()) {
 				std::cout << "build right" << std::endl;
 				right_node = std::make_shared<BVH_node>(right_primitive, depth + 1);

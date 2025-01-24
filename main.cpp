@@ -63,7 +63,7 @@ auto scene = std::make_shared<Scene>();
 
 void prepare() {
 
-	BVH_node::max_primitives_count = 2000;
+	BVH_node::max_primitives_count = 10;
 	rtr ::get_instance()->max_depth = 0;
 
 	scene->set_light(lighting);

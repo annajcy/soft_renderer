@@ -35,8 +35,7 @@ namespace raytrace
 
 		Raytracer() = default;
 
-		void render_scene(const std::shared_ptr<rendering::Scene>& scene) override
-		{
+		void render_scene(const std::shared_ptr<rendering::Scene>& scene) override {
 			std::vector<std::shared_ptr<rendering::Primitive>> primitives{};
 
 			for (auto &model : scene->models) {
@@ -55,26 +54,30 @@ namespace raytrace
 			auto camera_rays = scene->camera->generate_rays();
 
 			for (auto &[ray, pixel] : camera_rays) {
-				//std::cout << "Set pixel :" << pixel.x() << " " << pixel.y() << "\n";
-				set_pixel(pixel.x(), pixel.y(), math::Color(to_homo_point(ray_cast_color(ray, 0))));
+				if (pixel.x() == 100 && pixel.y() == 100)
+				{
+
+				}
+				auto color = math::Color(to_homo_point(ray_cast_color(ray, 0)));
+				std::cout << "Set pixel :" << pixel.x() << " " << pixel.y() << " " << color <<"\n";
+				set_pixel(pixel.x(), pixel.y(), color);
 			}
 
 		}
 
-		math::Vector3d ray_cast_color(const math::Ray& ray, int depth)
-		{
-			if (depth > max_depth) return math::Vector3d::zeros();
+		math::Vector3d ray_cast_color(const math::Ray& ray, int depth) {
 
-			std::shared_ptr<rendering::BVH_node> queried_node = nullptr;
+			if (depth > max_depth) return math::Vector3d::zeros();
+			std::shared_ptr<rendering::BVH_node> queried_node{};
 
 			decimal dist{};
+
 			if (bvh->aabb.intersect_with_ray(ray, dist)) {
 				queried_node = bvh->query(ray);
+				if (queried_node == nullptr)
+					return math::Vector3d{1.0, 0.0, 0.0};
 			}
-
-			if (queried_node == nullptr) {
-				return math::Vector3d::zeros();
-			}
+			else return math::Vector3d{0.0, 1.0, 0.0};
 
 			mesh::Vertex closest_hit_vert{};
 			std::shared_ptr<rendering::Material> material{};
@@ -91,7 +94,7 @@ namespace raytrace
 			}
 
 			if (!hit_found) {
-				return math::Vector3d::zeros();
+				return math::Vector3d{0.0, 0.0, 1.0};
 			}
 
 			math::Vector3d color = math::Vector3d::zeros();
@@ -102,10 +105,10 @@ namespace raytrace
 			} else if (material->type == rendering::Material::Material_type::DIFFUSE_AND_GLOSSY) {
 				auto reflected_ray = ray.reflect(closest_dist, closest_hit_vert.normal);
 				color +=
-						//(1.0 - reflected_loss) *
+						(1.0 - reflected_loss) *
 				         get_shader()->fragment_shader(Fragment_shader_input_data{closest_hit_vert.position, closest_hit_vert.normal, closest_hit_vert.uv}, *material).color;
-//				color += reflected_loss *
-//						ray_cast_color(reflected_ray, depth + 1);
+				color += reflected_loss *
+						ray_cast_color(reflected_ray, depth + 1);
 			} else if (material->type == rendering::Material::Material_type::REFRACTION_ONLY) {
 				auto reflected_ray = ray.reflect(closest_dist, closest_hit_vert.normal);
 				math::Ray refracted_ray{};
@@ -115,6 +118,7 @@ namespace raytrace
 			}
 
 			return color;
+
 		};
 
 	};

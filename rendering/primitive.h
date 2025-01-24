@@ -72,44 +72,71 @@ namespace rendering {
 			       p.z() <= p_max.z() && p.z() >= p_min.z();
 		}
 
+		[[nodiscard]] bool intersect_with_slab(Axis axis, const math::Ray &ray, std::pair<decimal, decimal> &interval) const {
+			decimal t1{}, t2{};
+			if (axis == Axis::X) {
+				if (sign(ray.direction.x()) == 0) return false;
+				t1 = (p_min.x() - ray.origin.x()) / ray.direction.x();
+				t2 = (p_max.x() - ray.origin.x()) / ray.direction.x();
+			} else if (axis == Axis::Y) {
+				if (sign(ray.direction.y()) == 0) return false;
+				t1 = (p_min.y() - ray.origin.y()) / ray.direction.y();
+				t2 = (p_max.y() - ray.origin.y()) / ray.direction.y();
+			} else {
+				if (sign(ray.direction.z()) == 0) return false;
+				t1 = (p_min.z() - ray.origin.z()) / ray.direction.z();
+				t2 = (p_max.z() - ray.origin.z()) / ray.direction.z();
+			}
+
+			interval.first = std::min(t1, t2);
+			interval.second = std::max(t1, t2);
+			return true;
+		}
+
 		[[nodiscard]] bool intersect_with_ray(const math::Ray& ray, decimal& distance) const {
-			decimal t_min = neg_inf;
-			decimal t_max = inf;
+			using Interval = std::pair<decimal, decimal>;
 
-			const math::Point3d& ray_origin = ray.origin;
-			const math::Vector3d& ray_dir = ray.direction;
+			auto overlap = [&](const Interval& a, const Interval& b, Interval& result) -> bool {
+				decimal t_min = std::max(a.first, b.first);
+				decimal t_max = std::min(a.second, b.second);
+				if (t_min > t_max) return false;
+				result = std::make_pair(t_min, t_max);
+				return true;
+			};
 
-			for (int i = 0; i < 3; ++i) { // Iterate over each axis: X, Y, Z
-				if (std::abs(ray_dir[i]) < eps) {
-					// Ray is parallel to this axis
-					if (ray_origin[i] < p_min[i] || ray_origin[i] > p_max[i]) {
-						return false; // Ray is outside the slab
-					}
-				} else {
-					// Compute intersection times for the two slab planes
-					decimal t1 = (p_min[i] - ray_origin[i]) / ray_dir[i];
-					decimal t2 = (p_max[i] - ray_origin[i]) / ray_dir[i];
+			Interval interval{neg_inf, inf};
 
-					// Ensure t1 is the near intersection and t2 is the far intersection
-					if (t1 > t2) std::swap(t1, t2);
-
-					// Update t_min and t_max for the current slab
-					t_min = std::max(t_min, t1);
-					t_max = std::min(t_max, t2);
-
-					// If the slabs do not overlap, there is no intersection
-					if (t_min > t_max) return false;
+			Interval interval_x{};
+			if (intersect_with_slab(Axis::X, ray, interval_x)) {
+				if (!overlap(interval, interval_x, interval)) {
+					return false;
 				}
 			}
 
-			return t_max - t_min > 0;
+			Interval interval_y{};
+			if (intersect_with_slab(Axis::Y, ray, interval_y)) {
+				if (!overlap(interval, interval_y, interval)) {
+					return false;
+				}
+			}
+
+			Interval interval_z{};
+			if (intersect_with_slab(Axis::Z, ray, interval_z)) {
+				if (!overlap(interval, interval_z, interval)) {
+					return false;
+				}
+			}
+
+			distance = interval.first;
+
+			return true;
 		}
 
 	};
 
 	struct Primitive{
 		std::shared_ptr<rendering::Material> material{};
-		Primitive(const std::shared_ptr<Material> &material_) : material(material_) {}
+		explicit Primitive(const std::shared_ptr<Material> &material_) : material(material_) {}
 		virtual AABB get_AABB() = 0;
 		virtual bool intersect(const math::Ray &ray, mesh::Vertex &intersection, decimal &dist) = 0;
 	};
