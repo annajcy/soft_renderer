@@ -4,6 +4,8 @@ project(soft_renderer)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_subdirectory(third_party/assimp)
+
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories( base )
@@ -25,9 +27,6 @@ file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
 
 # soft_renderer
 add_executable(soft_renderer main.cpp)
-target_link_libraries( soft_renderer ${OpenCV_LIBS} )
-
-file(GLOB assimp_lib third_party/lib/assimp/*.dylib)
-target_link_libraries( soft_renderer ${assimp_lib} )
+target_link_libraries( soft_renderer ${OpenCV_LIBS} assimp )
 
 

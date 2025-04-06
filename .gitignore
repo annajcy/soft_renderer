@@ -1,7 +1,55 @@
-/.vscode
-/.idea
-/cmake-build-debug
-/cmake-build-release
-/cmake-build-minsizerel
-/cmake-build-relwithdebinfo
-/build
+# 构建目录
+/build*/
+/out*/
+/x64/
+/x86/
+/Release/
+/Debug/
+
+# IDE相关
+/.vscode/
+/.vs/
+/.idea/
+/.cache/
+*.suo
+*.user
+*.sln
+*.filters
+*.vcxproj*
+*.opensdf
+*.sdf
+
+# 编译生成文件
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.exe
+*.ilk
+*.pdb
+*.exp
+*.manifest
+
+# CMake生成文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+Makefile
+
+# 临时文件
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.temp
+*.orig
+*.idx
+
+# 日志文件
+*.log
