@@ -1,5 +1,3 @@
 # CPU Renderer
 
-### Raster
-
-### Ray Tracer
+Support Rasterization and Ray Tracing 

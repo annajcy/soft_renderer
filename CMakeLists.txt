@@ -4,7 +4,7 @@ project(soft_renderer)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(third_party/assimp)
+add_subdirectory(ext/assimp)
 
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
@@ -20,7 +20,7 @@ include_directories( mesh )
 include_directories( utils )
 include_directories( curve )
 
-include_directories( third_party/include )
+include_directories( ext/assimp/include )
 
 file(GLOB copy_resources "assets")
 file(COPY ${copy_resources} DESTINATION ${CMAKE_BINARY_DIR})
